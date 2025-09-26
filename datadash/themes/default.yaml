@@ -1,0 +1,423 @@
+name: default
+description: Original dashboard theme
+dashboard_title: Deltabot Simulator
+
+# Palette assignments for trace coloring
+palettes:
+  primary: 'viridis'      # Default palette for most traces
+  secondary: 'autumn'     # Secondary palette for complementary data
+  tertiary: 'winter'      # Tertiary palette for additional data
+
+colors:
+  primary_bg: &color_primary_bg "#ffffff"
+  secondary_bg: &color_secondary_bg "#f8f9fa"
+  text_primary: &color_text_primary "#212529"
+  text_secondary: &color_text_secondary "#6c757d"
+  border: &color_border "#dee2e6"
+  accent: &color_accent "#007bff"
+
+fonts:
+  monospace: &monospace_font "'DroidSansMonoNerdFontMono, 'monospace'"
+  sans: &sans_font "'sans-serif'"
+  title: &title_font "'DroidSansMonoNerdFontMono', 'Arial'"
+  tab: &tab_font "'DroidSansMonoNerdFont', 'Arial'"
+  body: &body_font "'DroidSansMonoNerdFont', 'Arial'"
+  plots: &plots_font "'Menlo', 'Arial'"
+  footer: &footer_font "'InputMono-Light', 'monospace'"
+  table: &table_font "'DroidSansMonoNerdFont', 'monospace'"
+
+icons:
+  tabs:
+    robot-overview: ""
+    actuator-dynamics: ""
+    actuator-loads: ""
+    end-affector-trajectory-spatial: ""
+    joint-trajectories: ""
+    end-affector-trajectory: ""
+    summary-specifications: ""
+    results-table: ""
+    job-selector: ""
+
+styles:
+  header:
+    textAlign: center
+    fontFamily: *title_font
+    fontSize: 4rem
+    fontWeight: 500
+    color: *color_text_primary
+    height: 120px
+    flex-shrink: 0
+    background: rgb(248, 249, 250)
+    align-content: center
+    margin-bottom: 0px
+
+  tab:
+    background: *color_primary_bg
+    color: "#495057"
+    border: "1px solid #dee2e6"
+    borderRadius: 18px
+    padding: "0.5rem 1rem"
+    fontFamily: *tab_font
+    fontWeight: 600
+    fontSize: 1.1em
+    display: "flex"
+    alignItems: "center"
+    justifyContent: "center"
+    lineHeight: 1.25
+    maxWidth: 70%
+    
+  tab_selected:
+    background: "#007bff"
+    fontFamily: *tab_font
+    borderRadius: 18px
+    fontWeight: 800
+    fontSize: 1.3rem
+    fontStyle: bold
+    color: "#ffffff"
+    borderColor: "#007bff"
+    display: "flex"
+    alignItems: "center"
+    justifyContent: "center"
+    lineHeight: 1.25
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1)
+    background: 'linear-gradient(#4a90e2, #357ab8)'
+    
+  tab_container:
+    background: "#f8f9fa"
+    margin: 0rem
+    padding: 0rem 4rem 0.5rem
+    gap: 2rem
+    justifyContent: center
+    boxShadow: "0 2px 2px rgba(0,0,0,0.1)"
+    height: 80px
+    flex-shrink: 0
+    border-bottom: 1px solid rgb(222, 226, 230)
+
+
+  body_container:
+    background: *color_primary_bg
+    height: 100%
+    margin: 0px
+    fontFamily: *body_font
+    display: flex
+    flexDirection: column
+    min-height: 100vh
+    overflow: hidden  # prevent outer scroll
+    # position: relative
+    
+  main_container:
+    background: *color_primary_bg
+    flex: 1 1 auto
+    padding: 0rem
+    margin-bottom: 60px
+    overflow-x: hidden
+    overflow-y: auto
+    
+    
+  graph_container:
+    background: *color_primary_bg
+    flex: 1 1 auto
+    overflow-y: auto
+    gap: 0rem
+    width: 100%
+    max-width: 1200px
+    min-width: 600px
+
+  table_container:
+    background: *color_primary_bg
+    flex: 1 1 auto
+    overflow-y: auto
+    gap: 0rem;
+    width: 100%;
+    max-width: 1200px;
+    min-width: 600px;
+
+    
+  footer:
+    # position: fixed;
+    # bottom: 0;
+    # left: 0;
+    width: 100%;
+    textAlign: center
+    padding: 1rem
+    background: "#f8f9fa"
+    color: "#6c757d"
+    borderTop: "1px solid #dee2e6"
+    fontFamily: *footer_font
+    fontWeight: 400
+    fontSize: 1.2rem
+    height: 60px
+    z-index: 9999
+    lineHeight: 1.25
+    flex-shrink: 0
+
+plotly:
+  layout:
+    paper_bgcolor: "#ffffff"
+    plot_bgcolor: "#ffffff"
+    font:
+      family: *plots_font
+      size: 16
+      color: *color_text_primary
+    colorway: ["#007bff", "#28a745", "#dc3545", "#ffc107", "#17a2b8", "#6f42c1", "#e83e8c", "#fd7e14"]
+    autosize: True
+    title:
+      y: 0.9
+      x: 0.5
+      xanchor: center
+      yanchor: top
+    # margin: {l: 60, r: 60, t: 60, b: 60}
+    xaxis:
+      gridcolor: "#dee2e6"
+      color: *color_text_primary
+      linecolor: "#dee2e6"
+      tickcolor: "#dee2e6"
+      zerolinecolor: "#007bff"
+      title:
+        font:
+          weight: 400
+      tickfont:
+        weight: 400
+    yaxis:
+      gridcolor: "#dee2e6"
+      color: *color_text_primary
+      linecolor: "#dee2e6"
+      tickcolor: "#dee2e6"
+      zeroline: True
+      zerolinecolor: "#999999"
+      title:
+        font:
+          weight: 400
+      tickfont:
+        weight: 400
+    yaxis2:
+      gridcolor: "#dee2e6"
+      color: *color_text_primary
+      linecolor: "#dee2e6"
+      tickcolor: "#dee2e6"
+      zeroline: False
+      zerolinecolor: "#999999"
+      title:
+        font:
+          weight: 400
+      tickfont:
+        weight: 400
+    showlegend: False
+    scene:
+      xaxis:
+        gridcolor: "#dee2e6"
+        backgroundcolor: "#ffffff"
+        color: *color_text_primary
+        autorange: False
+        showgrid: True
+        tick0: 0          # start of ticks
+        dtick: 0.1        # spacing between ticks
+      yaxis:
+        gridcolor: "#dee2e6"
+        backgroundcolor: "#ffffff"
+        color: *color_text_primary
+        showgrid: True
+        autorange: False
+        tick0: 0          # start of ticks
+        dtick: 0.1        # spacing between ticks
+      zaxis:
+        gridcolor: "#dee2e6"
+        backgroundcolor: "#ffffff"
+        color: *color_text_primary
+        showgrid: True
+        autorange: False
+        tick0: 0          # start of ticks
+        dtick: 0.1        # spacing between ticks
+      # aspectmode: manual
+      # aspectratio: {x: 1, y: 1, z: 1}
+    
+      
+  traces:
+    default:
+      marker: 
+        size: 4
+        color: "#007bff"
+      line: 
+        color: "#007bff"
+        width: 2
+      mode: lines+markers
+      visible: true
+    x:
+      marker: 
+        size: 3
+        color: "#dc3545"
+      line: 
+        color: "#dc3545"
+        width: 2
+      mode: lines
+      name: x
+      hovertemplate: "%{y:.3f}"
+    y:
+      marker: 
+        size: 3
+        color: "#28a745"
+      line: 
+        color: "#28a745"
+        width: 2
+      mode: lines
+      name: y
+      hovertemplate: "%{y:.3f}"
+    z:
+      marker: 
+        size: 3
+        color: "#007bff"
+      line: 
+        color: "#007bff"
+        width: 2
+      mode: lines
+      name: z
+      hovertemplate: "%{y:.3f}"
+
+    actuator_0:
+      line: 
+        color: "#640D5F"
+        width: 3
+      mode: lines
+      name: actuator 0
+      hovertemplate: "%{y:.3f}"
+    actuator_1:
+      line: 
+        color: "#EA2264"
+        width: 3
+      mode: lines
+      name: actuator 1
+      hovertemplate: "%{y:.3f}"
+    actuator_2:
+      line: 
+        color: "#F78D60"
+        width: 3
+      mode: lines
+      name: actuator 2
+      hovertemplate: "%{y:.3f}"
+
+    # Robot-specific trace properties
+    nacelle:
+      marker: 
+        size: 5
+        color: "#6c757d"
+      line: 
+        color: "#6c757d"
+        width: 5
+      surfacecolor: "rgba(108,117,125,0.1)"
+      surfaceaxis: 2
+      visible: true
+    base:
+      marker: 
+        size: 6
+        color: "#495057"
+      line: 
+        color: "#495057"
+        width: 8
+      surfacecolor: "rgba(73,80,87,0.1)"
+      surfaceaxis: 2
+      visible: true
+    proximal:
+      marker: 
+        size: 8
+        color: "#007bff"
+      line: 
+        color: "#007bff"
+        width: 7
+      visible: true
+    distal:
+      marker: 
+        size: 3
+        color: "#17a2b8"
+      line: 
+        color: "#17a2b8"
+        width: 4
+      visible: true
+    trajectory:
+      marker: 
+        size: 3
+        color: "#28a745"
+      line: 
+        color: "#28a745"
+        width: 2
+      mode: lines
+      visible: true
+    trajectory_center:
+      marker: 
+        size: 4
+        color: "#ffc107"
+      line: 
+        color: "#28a745"
+        width: 2
+      mode: markers
+      visible: true
+    limit.min:
+      line: 
+        color: "#dc3545"
+        width: 5
+        dash: dash
+      mode: lines
+      visible: true
+    limit.max:
+      line: 
+        color: "#6c757d"
+        width: 5
+        dash: dash
+      mode: lines
+      visible: true
+    envelope:
+      marker: 
+        size: 3
+        color: "#28a745"
+      line: 
+        color: "#28a745"
+        width: 2
+      mode: lines
+      visible: true
+    end_effector:
+      marker: 
+        size: 5
+        color: "#495057"
+      line: 
+        color: "#495057"
+        width: 7
+      visible: true
+    cog:
+      marker:
+        size: 7
+        color: "#FFFFFF"
+        line: 
+          color: "#000000"
+          width: 5
+      marker_symbol: circle
+      mode: markers
+      visible: true
+    trajectory.path:
+      marker: 
+        size: 3
+        color: "#28a745"
+      line: 
+        color: "#28a745"
+        width: 3
+      mode: lines
+      visible: true
+    trajectory.end_effector:
+      marker: 
+        size: 6
+        color: "#000000"
+      line: 
+        color: "#000000"
+        width: 3
+      mode: lines
+      visible: false
+
+settings:
+  debug_mode: false
+  pattern_properties_enable: false
+  trace_resolution_default: 400
+  trace_margin: 0.15
+  pattern_properties_enable: true
+  pattern_properties_lookup: [yaxis, xaxis]
+  pattern_properties_exclusions: [zaxis]
+  symmetrical_yaxis: false
+  animation_frame_rate: 20
+  animation_duration: 1.0

@@ -1,0 +1,312 @@
+name: "futuristic"
+description: "Cyberpunk-style futuristic theme with Nerd Fonts"
+
+# Palette assignments for trace coloring
+palettes:
+  primary: 'plasma'           # Futuristic plasma colors for primary traces
+  secondary: 'categorical_cool'  # Cool categorical colors for secondary data
+  tertiary: 'sequential_blue'    # Blue sequential for tertiary data
+
+colors:
+  primary_bg: "#0a0e1a"
+  secondary_bg: "#1a1f2e"
+  accent_bg: "#2a3441"
+  text_primary: "#00ff88"
+  text_secondary: "#88ccff"
+  text_accent: "#ffaa00"
+  border: "#334155"
+  glow: "#00ff8844"
+
+fonts:
+  monospace: &monospace "'BlexMonoNerdFontMono', 'IBM Plex Mono', 'ProFontNerdFont', 'ProFont IIx Nerd Font', monospace"
+  sans: &sans "'Inter', 'Helvetica Neue', 'Arial', sans-serif"
+
+
+icons:
+  tabs:
+    robot-overview: "󰚩"
+    actuator-dynamics: ""
+    actuator-loads: "󰒓"
+    end-affector-trajectory-spatial: "󰍉"
+    joint-trajectories: "󰓫"
+    end-affector-trajectory: "󰁰"
+    summary-specifications: ""
+    results-table: "󰕮"
+    job-selector: "󰮔"
+
+styles:
+  header:
+    textAlign: "center"
+    fontFamily: *monospace
+    fontSize: "2.5rem"
+    fontWeight: "700"
+    background: "linear-gradient(45deg, #00ff88, #88ccff)"
+    webkitBackgroundClip: "text"
+    webkitTextFillColor: "transparent"
+    textShadow: "0 0 20px #00ff8844"
+    margin: "2rem 0"
+    letterSpacing: "0.1em"
+  
+  tab:
+    background: "transparent"
+    color: "#88ccff"
+    border: "1px solid #334155"
+    borderRadius: "8px"
+    margin: "0 0.25rem"
+    padding: "0.75rem 1.5rem"
+    fontFamily: *monospace
+    fontWeight: "600"
+    fontSize: "0.9rem"
+    display: "flex"
+    alignItems: "center"
+    justifyContent: "center"
+    lineHeight: "1"
+    
+  tab_selected:
+    background: "linear-gradient(135deg, #2a3441, #1a1f2e)"
+    color: "#00ff88"
+    borderColor: "#00ff88"
+    boxShadow: "0 0 25px #00ff8844, inset 0 1px 10px rgba(0, 255, 136, 0.1)"
+    display: "flex"
+    alignItems: "center"
+    justifyContent: "center"
+    lineHeight: "1"
+    
+  tab_container:
+    background: "#1a1f2e"
+    borderRadius: "12px"
+    margin: "1rem"
+    padding: "0.5rem"
+    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)"
+    
+  graph_container:
+    background: "#1a1f2e"
+    borderRadius: "12px"
+    border: "1px solid #334155"
+    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.2)"
+    margin: "0.5rem"
+    padding: "1rem"
+    display: "flex"
+    flexDirection: "column"
+    # minHeight: "500px"
+    
+  content_area:
+    background: "#0a0e1a"
+    minHeight: "70vh"
+    padding: "2rem"
+    
+  main_container:
+    background: "linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 100%)"
+    minHeight: "100vh"
+    fontFamily: *monospace
+
+  footer:
+    textAlign: "center"
+    padding: "2rem"
+    background: "#0a0e1a"
+    color: "#88ccff"
+    borderTop: "1px solid #334155"
+    fontFamily: *monospace
+    fontSize: "0.85rem"
+
+plotly:
+  layout:
+    paper_bgcolor: "#0a0e1a"
+    plot_bgcolor: "#1a1f2e"
+    font:
+      family: *monospace
+      size: 11
+      color: "#88ccff"
+    colorway: ["#00ff88", "#88ccff", "#ffaa00", "#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#feca57"]
+    autosize: true
+    margin: {l: 50, r: 50, t: 50, b: 50}
+    xaxis:
+      gridcolor: "#334155"
+      color: "#88ccff"
+      linecolor: "#334155"
+      tickcolor: "#334155"
+      zerolinecolor: "#00ff88"
+      title:
+        font:
+          weight: 400
+      tickfont:
+        weight: 400
+    yaxis:
+      gridcolor: "#334155" 
+      color: "#88ccff"
+      linecolor: "#334155"
+      tickcolor: "#334155"
+      zerolinecolor: "#00ff88"
+      title:
+        font:
+          weight: 400
+      tickfont:
+        weight: 400
+    scene:
+      xaxis:
+        gridcolor: "#334155"
+        backgroundcolor: "#1a1f2e"
+        color: "#88ccff"
+      yaxis:
+        gridcolor: "#334155"
+        backgroundcolor: "#1a1f2e"
+        color: "#88ccff"
+      zaxis:
+        gridcolor: "#334155"
+        backgroundcolor: "#1a1f2e"
+        color: "#88ccff"
+        autorange: "reversed"  # Flip Z-axis so positive goes down
+  traces:
+    line:
+      width: 2
+    marker:
+      size: 4
+    trace:
+      marker: 
+        size: 4
+        color: "#00ff88"
+      line: 
+        color: "#00ff88"
+        width: 4
+      mode: lines+markers
+      visible: true
+    x:
+      marker: 
+        size: 3
+        color: "#ff6b6b"
+      line: 
+        color: "#2761FE"
+        width: 2
+      mode: lines
+      name: x
+      hovertemplate: "%{y:.3f}"
+    y:
+      marker: 
+        size: 3
+        color: "#4ecdc4"
+      line: 
+        color: "#5E41DF"
+        width: 2
+      mode: lines
+      name: y
+      hovertemplate: "%{y:.3f}"
+    z:
+      marker: 
+        size: 3
+        color: "#88ccff"
+      line: 
+        color: "#9D01CC"
+        width: 2
+      mode: lines
+      name: z
+      hovertemplate: "%{y:.3f}"
+    # Robot-specific trace properties (from original config)
+    nacelle:
+      marker: 
+        size: 5
+        color: "#07183b"
+      line: 
+        color: "#07183b"
+        width: 5
+      name: nacelle
+      surfacecolor: "rgba(0,0,0,0.1)"
+      surfaceaxis: 2
+      visible: true
+    base:
+      marker: 
+        size: 6
+        color: "#0037ab"
+      line: 
+        color: "#0037ab"
+        width: 8
+      name: base
+      surfacecolor: "rgba(0,55,171,0.1)"
+      surfaceaxis: 2
+      visible: true
+    proximal:
+      marker: 
+        size: 8
+        color: "#4169E1"
+      line: 
+        color: "#4169E1"
+        width: 7
+      name: proximal
+      visible: true
+    distal:
+      marker: 
+        size: 3
+        color: "#00BFFF"
+      line: 
+        color: "#00BFFF"
+        width: 4
+      name: distal
+      visible: true
+    trajectory:
+      marker: 
+        size: 3
+        color: "#00ff88"
+      line: 
+        color: "#00ff88"
+        width: 2
+      mode: lines
+      name: trajectory
+      visible: true
+    trajectory_center:
+      marker: 
+        size: 4
+        color: "#88ccff"
+      line: 
+        color: "#00ff88"
+        width: 2
+      mode: markers
+      name: trajectory_center
+      visible: true
+    proximal_travel_min:
+      line: 
+        color: "#ff6b6b"
+        width: 5
+        dash: "dash"
+      mode: lines
+      visible: true
+    proximal_travel_max:
+      line: 
+        color: "#334155"
+        width: 5
+        dash: "dash"
+      mode: lines
+      visible: true
+    envelope:
+      marker: 
+        size: 3
+        color: "#00ff88"
+      line: 
+        color: "#00ff88"
+        width: 2
+      mode: lines
+      name: envelope
+      visible: true
+    end_effector:
+      marker: 
+        size: 5
+        color: "#07183b"
+      line: 
+        color: "#07183b"
+        width: 7
+      name: end_effector
+      visible: true
+    centre_gravity:
+      marker: { size: 6, color: "#88ccff", line: { color: "#334155", width: 8 } }
+      marker_symbol: circle
+      mode: markers
+      name: cog
+      visible: false
+      
+settings:
+  debug_mode: false
+  pattern_properties_enable: false
+  trace_resolution_default: 400
+  subplots:
+    trace_margin: 0.15
+    pattern_properties_enable: true
+    pattern_properties_lookup: [yaxis, xaxis]
+    symmetrical_yaxis: true

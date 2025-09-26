@@ -1,0 +1,180 @@
+# Color Palette Definitions
+# Author : Matthew Davidson
+# 2023/01/23
+# Davidson Engineering Ltd. © 2023
+
+# Static palettes with predefined colors
+autumn:
+  type: "static"
+  colors:
+    - "#ff7f0e"  # Orange
+    - "#d62728"  # Red
+    - "#ff9896"  # Light red
+    - "#ffbb78"  # Light orange
+    - "#c5b0d5"  # Light purple
+    - "#8c564b"  # Brown
+
+summer:
+  type: "static"
+  colors:
+    - "#2ca02c"  # Green
+    - "#98df8a"  # Light green
+    - "#1f77b4"  # Blue
+    - "#aec7e8"  # Light blue
+    - "#ffbb78"  # Light orange
+    - "#c5b0d5"  # Light purple
+
+winter:
+  type: "static"
+  colors:
+    - "#1f77b4"  # Blue
+    - "#aec7e8"  # Light blue
+    - "#c5b0d5"  # Light purple
+    - "#9467bd"  # Purple
+    - "#17becf"  # Cyan
+    - "#bcbd22"  # Olive
+
+spring:
+  type: "static"
+  colors:
+    - "#2ca02c"  # Green
+    - "#98df8a"  # Light green
+    - "#ff7f0e"  # Orange
+    - "#ffbb78"  # Light orange
+    - "#e377c2"  # Pink
+    - "#f7b6d3"  # Light pink
+
+# Viridis-inspired palette
+viridis:
+  type: "static"
+  colors:
+    - "#440154"  # Dark purple
+    - "#482777"  # Purple
+    - "#3f4a8a"  # Dark blue
+    - "#31678e"  # Blue
+    - "#26838f"  # Teal
+    - "#1f9d8a"  # Green-teal
+    - "#6cce5a"  # Green
+    - "#b6de2b"  # Yellow-green
+    - "#fee825"  # Yellow
+
+# Plasma-inspired palette
+plasma:
+  type: "static"
+  colors:
+    - "#0c0786"  # Dark blue
+    - "#40039c"  # Purple
+    - "#6a00a7"  # Magenta
+    - "#8f0da4"  # Pink-magenta
+    - "#b12a90"  # Pink
+    - "#cc4778"  # Light pink
+    - "#e16462"  # Coral
+    - "#f1834c"  # Orange
+    - "#fca636"  # Yellow-orange
+    - "#fcce25"  # Yellow
+
+# Classic rainbow
+rainbow:
+  type: "static"
+  colors:
+    - "#ff0000"  # Red
+    - "#ff8000"  # Orange
+    - "#ffff00"  # Yellow
+    - "#80ff00"  # Yellow-green
+    - "#00ff00"  # Green
+    - "#00ff80"  # Green-cyan
+    - "#00ffff"  # Cyan
+    - "#0080ff"  # Light blue
+    - "#0000ff"  # Blue
+    - "#8000ff"  # Purple
+    - "#ff00ff"  # Magenta
+
+# Generated palettes
+categorical_warm:
+  type: "categorical"
+  params:
+    base_hue: 0      # Start at red
+    saturation: 75   # 75%
+    value: 70        # 70%
+
+categorical_cool:
+  type: "categorical"
+  params:
+    base_hue: 180    # Start at cyan
+    saturation: 75   # 75%
+    value: 70        # 70%
+
+sequential_blue:
+  type: "sequential"
+  params:
+    base_hue: 210        # Blue hue
+    saturation: 80       # 80%
+    value_start: 90      # Light blue
+    value_end: 20        # Dark blue
+
+sequential_red:
+  type: "sequential"
+  params:
+    base_hue: 0          # Red hue
+    saturation: 80       # 80%
+    value_start: 90      # Light red
+    value_end: 20        # Dark red
+
+sequential_green:
+  type: "sequential"
+  params:
+    base_hue: 120        # Green hue
+    saturation: 80       # 80%
+    value_start: 90      # Light green
+    value_end: 20        # Dark green
+
+diverging_red_blue:
+  type: "diverging"
+  params:
+    hue_start: 0         # Red
+    hue_end: 240         # Blue
+    saturation: 70       # 70%
+    value: 70            # 70%
+
+diverging_orange_purple:
+  type: "diverging"
+  params:
+    hue_start: 30        # Orange
+    hue_end: 270         # Purple
+    saturation: 75       # 75%
+    value: 65            # 65%
+
+# Accessibility-friendly palette (colorblind-safe)
+colorblind_safe:
+  type: "static"
+  colors:
+    - "#000000"  # Black
+    - "#e69f00"  # Orange
+    - "#56b4e9"  # Sky blue
+    - "#009e73"  # Bluish green
+    - "#f0e442"  # Yellow
+    - "#0072b2"  # Blue
+    - "#d55e00"  # Vermillion
+    - "#cc79a7"  # Reddish purple
+
+# Monochromatic blue
+mono_blue:
+  type: "static"
+  colors:
+    - "#08306b"  # Dark blue
+    - "#08519c"  # Blue
+    - "#3182bd"  # Medium blue
+    - "#6baed6"  # Light blue
+    - "#9ecae1"  # Lighter blue
+    - "#c6dbef"  # Very light blue
+
+# Monochromatic green
+mono_green:
+  type: "static"
+  colors:
+    - "#00441b"  # Dark green
+    - "#006d2c"  # Green
+    - "#238b45"  # Medium green
+    - "#41ab5d"  # Light green
+    - "#74c476"  # Lighter green
+    - "#a1d99b"  # Very light green
