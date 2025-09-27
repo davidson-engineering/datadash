@@ -144,6 +144,65 @@ class ThemeManager:
 
         return self.palette_registry.generate_colors(palette_name, count)
 
+    def get_themed_trace_properties(self, trace_name: str, palette_level: str, trace_index: int, total_traces: int) -> Dict[str, Any]:
+        """Get complete themed properties for a trace including palette colors.
+
+        Args:
+            trace_name: Name/identifier of the trace for theme lookup
+            palette_level: Palette level (primary, secondary, tertiary)
+            trace_index: Index of this trace in the group (0-based)
+            total_traces: Total number of traces in the group
+
+        Returns:
+            Dictionary of complete themed properties including palette colors
+        """
+        # Get base trace theme
+        base_theme = self.get_trace_theme(trace_name) or {}
+
+        # Get palette colors for the full group
+        palette_colors = self.get_palette_colors(palette_level, total_traces)
+
+        # Apply the specific color for this trace
+        if trace_index < len(palette_colors):
+            color = palette_colors[trace_index]
+
+            # Merge palette color with base theme
+            themed_properties = base_theme.copy()
+
+            # Apply color to line and marker properties
+            if "line" not in themed_properties:
+                themed_properties["line"] = {}
+            if "marker" not in themed_properties:
+                themed_properties["marker"] = {}
+
+            themed_properties["line"]["color"] = color
+            themed_properties["marker"]["color"] = color
+
+            return themed_properties
+
+        # Fallback if index is out of range
+        return base_theme
+
+    def assign_palette_colors_to_traces(self, trace_names: list[str], palette_level: str) -> Dict[str, Dict[str, Any]]:
+        """Assign palette colors to a group of traces and return themed properties.
+
+        Args:
+            trace_names: List of trace names/identifiers
+            palette_level: Palette level to use for color assignment
+
+        Returns:
+            Dictionary mapping trace names to their complete themed properties
+        """
+        themed_traces = {}
+        total_traces = len(trace_names)
+
+        for i, trace_name in enumerate(trace_names):
+            themed_traces[trace_name] = self.get_themed_trace_properties(
+                trace_name, palette_level, i, total_traces
+            )
+
+        return themed_traces
+
     def list_available_palettes(self) -> Dict[str, str]:
         """Get the current palette assignments for this theme.
 
