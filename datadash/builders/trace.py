@@ -187,7 +187,7 @@ class TraceConstructor:
     closed: bool = False
     static: bool = False
     properties: Optional[Dict[str, Any]] = None
-    number_frames: Optional[int] = None
+    # number_frames: Optional[int] = None
 
     def __post_init__(self):
         """Post-initialization processing."""
@@ -487,7 +487,7 @@ class TraceBuilder:
     Builds Plotly traces from TraceConstructor objects with theme support.
 
     Features:
-    - Theme-based property merging with caching for performance.
+    - Theme-based property merging (theme takes priority, caching handled by theme manager).
     - Handles static and animated traces.
     - Supports 2D and 3D traces, including multi-segment and closed shapes.
     - Preserves axes convention: (N_points, time, space), where:
@@ -505,12 +505,14 @@ class TraceBuilder:
         """
         self.theme_manager = theme_manager or get_theme_manager()
         self.logger = logging.getLogger(__name__)
-        self._theme_cache: Dict[str, Dict[str, Any]] = {}  # Cache theme lookups
 
     # ---------- Public API ----------
 
     def build_trace(
-        self, constructor: TraceConstructor, number_frames: Optional[int] = None, use_precomputed_themes: bool = True
+        self,
+        constructor: TraceConstructor,
+        number_frames: Optional[int] = None,
+        use_precomputed_themes: bool = True,
     ) -> Union[go.Scatter, go.Scatter3d]:
         """
         Build a single Plotly trace from a TraceConstructor object.
@@ -563,7 +565,9 @@ class TraceBuilder:
         traces: List[Union[go.Scatter, go.Scatter3d]] = []
         for c in constructors:
             try:
-                traces.append(self.build_trace(c, use_precomputed_themes=use_precomputed_themes))
+                traces.append(
+                    self.build_trace(c, use_precomputed_themes=use_precomputed_themes)
+                )
             except Exception as e:
                 self.logger.error(
                     f"Failed to build trace '{getattr(c, 'name', '?')}': {e}"
@@ -574,9 +578,11 @@ class TraceBuilder:
 
     def _resolve_properties(self, constructor: TraceConstructor) -> Dict[str, Any]:
         """
-        Merge theme properties with constructor properties.
+        Merge constructor properties with theme properties (theme takes priority).
 
-        Performs hierarchical theme lookup; falls back to 'default' if none found.
+        Performs hierarchical theme lookup via theme manager; falls back to 'default' if none found.
+        Theme properties override constructor properties to allow theme manager
+        control over styling priorities. All caching is handled by the theme manager.
 
         Args:
             constructor: TraceConstructor object.
@@ -585,32 +591,19 @@ class TraceBuilder:
             Merged dictionary of properties ready for Plotly.
         """
         for key in constructor.get_hierarchical_lookup_keys():
-            theme = self._get_theme_cached(key)
+            theme = self.theme_manager.get_trace_theme(key)
             if theme:
-                props = merge({}, theme, constructor.properties)
+                props = merge({}, constructor.properties, theme)
                 break
         else:
-            props = merge({}, self._get_theme_cached("default"), constructor.properties)
+            default_theme = self.theme_manager.get_trace_theme("default")
+            props = merge({}, constructor.properties, default_theme or {})
 
-        # Inject human-readable name, giving priority to constructor over theme
+        # Inject human-readable name from constructor (trace identity)
         if constructor.name and constructor.name != "trace":
             props["name"] = constructor.name
 
         return props
-
-    def _get_theme_cached(self, key: str) -> Dict[str, Any]:
-        """
-        Retrieve a cached theme dict for a key or query the theme manager.
-
-        Args:
-            key: Hierarchical theme key.
-
-        Returns:
-            Theme dictionary (may be empty if no theme found).
-        """
-        if key not in self._theme_cache:
-            self._theme_cache[key] = self.theme_manager.get_trace_theme(key) or {}
-        return self._theme_cache[key]
 
     # ---------- Data Preparation ----------
 
