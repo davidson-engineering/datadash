@@ -34,7 +34,7 @@ def create_combined_traces(x, y, headers="xyz", hover_template=None):
         if hover_template:
             # Add hover template to the trace properties
             # Ensure properties is a dict, not StandardTraceProperties
-            if hasattr(trace.properties, 'to_dict'):
+            if hasattr(trace.properties, "to_dict"):
                 props_dict = trace.properties.to_dict()
                 props_dict["hovertemplate"] = hover_template
                 trace.properties = props_dict
@@ -217,11 +217,12 @@ class Spatial2DPlotBuilder(SpatialPlotBuilder):
 
         # Deep-merge the spatial overrides (preserve reversed Z)
         merge(layout, spatial_overrides)
+        trace_properties["name"] = trace_properties.get("name", "trace_0")
 
         # Create standard trace constructor with line trace
         traces = {
-            "trace0": create_line_trace(
-                name="trace0", x_data=x_data, y_data=y_data, **trace_properties
+            trace_properties["name"]: create_line_trace(
+                x_data=x_data, y_data=y_data, **trace_properties
             )
         }
 
@@ -255,10 +256,11 @@ class Spatial3DPlotBuilder(SpatialPlotBuilder):
             {}, self.default_3d_trace_properties, {"marker": {"color": velocity_norm}}
         )
 
+        trace_properties["name"] = trace_properties.get("name", "trace_0")
+
         # Create standard 3D trace constructor
         traces = {
-            "trace0": create_line_trace(
-                name="trace0",
+            trace_properties["name"]: create_line_trace(
                 x_data=x_data,
                 y_data=y_data,
                 z_data=z_data,

@@ -170,33 +170,42 @@ class PlotFigure:
     def _build_basic_trace(self, constructor):
         """Build a basic trace from TraceConstructor without theme styling."""
         import plotly.graph_objects as go
+        from ..standard.properties import StandardTraceProperties
+        from ..converters.plotly_converter import PlotlyPropertyConverter
 
         # Extract basic properties
-        points = np.asarray(constructor.points)
-        properties = constructor.properties.copy() if constructor.properties else {}
+        data = np.asarray(constructor.data)
 
-        # Determine if 2D or 3D based on points shape
-        if points.ndim >= 2 and points.shape[-1] >= 3:
+        # Handle properties conversion
+        if isinstance(constructor.properties, StandardTraceProperties):
+            # Convert standard properties to Plotly format
+            properties = PlotlyPropertyConverter.convert_properties(constructor.properties)
+        else:
+            # Use raw properties dictionary
+            properties = constructor.properties.to_dict()
+
+        # Determine if 2D or 3D based on data shape
+        if data.ndim >= 2 and data.shape[-1] >= 3:
             # 3D trace
-            if points.ndim == 1:
-                x, y, z = points[0], points[1], points[2]
-            elif points.ndim == 2:
-                x, y, z = points[:, 0], points[:, 1], points[:, 2]
+            if data.ndim == 1:
+                x, y, z = data[0], data[1], data[2]
+            elif data.ndim == 2:
+                x, y, z = data[:, 0], data[:, 1], data[:, 2]
             else:
                 # Flatten for multi-segment
-                flat = points.reshape(-1, points.shape[-1])
+                flat = data.reshape(-1, data.shape[-1])
                 x, y, z = flat[:, 0], flat[:, 1], flat[:, 2]
 
             return go.Scatter3d(x=x, y=y, z=z, **properties)
         else:
             # 2D trace
-            if points.ndim == 1:
-                x, y = points[0], points[1]
-            elif points.ndim == 2:
-                x, y = points[:, 0], points[:, 1]
+            if data.ndim == 1:
+                x, y = data[0], data[1]
+            elif data.ndim == 2:
+                x, y = data[:, 0], data[:, 1]
             else:
                 # Flatten for multi-segment
-                flat = points.reshape(-1, points.shape[-1])
+                flat = data.reshape(-1, data.shape[-1])
                 x, y = flat[:, 0], flat[:, 1]
 
             return go.Scatter(x=x, y=y, **properties)
@@ -205,17 +214,17 @@ class PlotFigure:
         """Convert legacy dict-based constructor to TraceConstructor.
 
         Args:
-            legacy_dict: Legacy dict with keys like 'points', 'properties', etc.
+            legacy_dict: Legacy dict with keys like 'data', 'properties', etc.
 
         Returns:
             TraceConstructor: New TraceConstructor instance
         """
         # Extract common fields from legacy dict
         name = legacy_dict.get("name", "trace")
-        points = legacy_dict.get("points", [])
-        points_time = legacy_dict.get("points_time", None)
+        data = legacy_dict.get("data", [])
+        time = legacy_dict.get("time", None)
         closed = legacy_dict.get("closed", False)
-        static = legacy_dict.get("static", points_time is None)
+        static = legacy_dict.get("static", time is None)
         properties = legacy_dict.get("properties", {})
 
         # Capture hovertemplate from top-level dict and add to properties
@@ -224,20 +233,20 @@ class PlotFigure:
             properties["hovertemplate"] = legacy_dict["hovertemplate"]
 
         # Handle alternative field names
-        if (not hasattr(points, "__len__") or len(points) == 0) and "x" in legacy_dict:
-            # Convert x, y, z to points format
+        if (not hasattr(data, "__len__") or len(data) == 0) and "x" in legacy_dict:
+            # Convert x, y, z to data format
             x = legacy_dict.get("x", [])
             y = legacy_dict.get("y", [])
             z = legacy_dict.get("z", [])
             if len(z) > 0:
-                points = np.column_stack((x, y, z))
+                data = np.column_stack((x, y, z))
             else:
-                points = np.column_stack((x, y))
+                data = np.column_stack((x, y))
 
         return TraceConstructor(
             name=name,
-            points=points,
-            points_time=points_time,
+            data=data,
+            time=time,
             closed=closed,
             static=static,
             properties=properties,
@@ -246,7 +255,7 @@ class PlotFigure:
     @property
     def traces(self, trace_constructor=None):
         # If we have pre-themed traces from plot builders, use them
-        if hasattr(self, '_themed_traces') and self._themed_traces:
+        if hasattr(self, "_themed_traces") and self._themed_traces:
             return self._themed_traces
 
         self.trace_constructor = (
@@ -602,7 +611,7 @@ class SubplotsFigure(PlotFigure):
     @property
     def traces(self):
         # If we have pre-themed traces from plot builders, use them
-        if hasattr(self, '_themed_traces') and self._themed_traces:
+        if hasattr(self, "_themed_traces") and self._themed_traces:
             return self._themed_traces
 
         # Build traces without theme application - themes are applied in plot builders
@@ -622,8 +631,8 @@ class SubplotsFigure(PlotFigure):
             # Create updated constructor with merged properties
             updated_constructor = TraceConstructor(
                 name=constructor.name,
-                points=constructor.points,
-                points_time=constructor.points_time,
+                data=constructor.data,
+                data_time=constructor.data_time,
                 closed=constructor.closed,
                 static=constructor.static,
                 properties=merged_properties,
@@ -946,7 +955,7 @@ class CombinedAxisFigure(PlotFigure):
     @property
     def traces(self):
         # If we have pre-themed traces from plot builders, use them
-        if hasattr(self, '_themed_traces') and self._themed_traces:
+        if hasattr(self, "_themed_traces") and self._themed_traces:
             return self._themed_traces
 
         # Build traces without theme application - themes are applied in plot builders

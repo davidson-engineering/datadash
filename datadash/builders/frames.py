@@ -85,8 +85,8 @@ class FramesConstructor:
             # Create constructor with target frame count
             resized_constructor = TraceConstructor(
                 name=constructor.name,
-                points=constructor.points,
-                points_time=constructor.points_time,
+                data=constructor.data,
+                time=constructor.time,
                 closed=constructor.closed,
                 static=constructor.static,
                 properties=constructor.properties,

@@ -61,7 +61,7 @@ class PlotlyPropertyConverter:
         # Basic properties
         plotly_props["visible"] = props.visible
         plotly_props["opacity"] = props.opacity
-        plotly_props["mode"] = cls.MODE_MAP[props.mode]
+        plotly_props["mode"] = cls.MODE_MAP[TraceMode(props.mode)]
 
         # Line properties
         if props.mode in (TraceMode.LINES, TraceMode.LINES_AND_MARKERS):
@@ -100,7 +100,9 @@ class PlotlyPropertyConverter:
         if props.fill_color is not None:
             plotly_props["fillcolor"] = props.fill_color
             plotly_props["fill"] = "tonexty"  # Default fill mode
-            plotly_props["fillcolor"] = f"rgba{cls._hex_to_rgba(props.fill_color, props.fill_opacity)}"
+            plotly_props["fillcolor"] = (
+                f"rgba{cls._hex_to_rgba(props.fill_color, props.fill_opacity)}"
+            )
 
         # Hover properties
         if props.hover_text is not None:
@@ -125,7 +127,7 @@ class PlotlyPropertyConverter:
     def _hex_to_rgba(cls, hex_color: str, opacity: float) -> str:
         """Convert hex color to RGBA string with opacity."""
         # Remove '#' if present
-        hex_color = hex_color.lstrip('#')
+        hex_color = hex_color.lstrip("#")
 
         # Convert to RGB
         r = int(hex_color[0:2], 16)
@@ -140,9 +142,20 @@ class PlotlyPropertyConverter:
         # List of common Plotly trace properties
         # This is a simplified check - in practice you might want a more comprehensive list
         valid_props = {
-            "name", "text", "textposition", "texttemplate", "hoverinfo",
-            "hoveron", "hovertemplate", "xaxis", "yaxis", "orientation",
-            "groupnorm", "stackgroup", "connectgaps", "cliponaxis",
+            "name",
+            "text",
+            "textposition",
+            "texttemplate",
+            "hoverinfo",
+            "hoveron",
+            "hovertemplate",
+            "xaxis",
+            "yaxis",
+            "orientation",
+            "groupnorm",
+            "stackgroup",
+            "connectgaps",
+            "cliponaxis",
         }
         return prop_name in valid_props
 

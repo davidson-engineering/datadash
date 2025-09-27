@@ -91,7 +91,7 @@ class TraceConstructor:
     closed: bool = False
     static: bool = False
     properties: Optional[Dict[str, Any]] = None
-    # number_frames: Optional[int] = None
+    number_frames: Optional[int] = None
 
     def __post_init__(self):
         """Post-initialization processing."""
@@ -591,7 +591,9 @@ class TraceBuilder:
             if points.ndim == 1:
                 # Single point
                 if len(points) < 2:
-                    raise ValueError(f"Trace '{constructor.name}' needs at least 2 coordinates (x, y), got {len(points)}")
+                    raise ValueError(
+                        f"Trace '{constructor.name}' needs at least 2 coordinates (x, y), got {len(points)}"
+                    )
                 x = points[0:1]  # Keep as array for consistency
                 y = points[1:2]
                 z = points[2:3] if len(points) > 2 else None
@@ -600,7 +602,9 @@ class TraceBuilder:
                 if points.shape[0] == 0:
                     raise ValueError(f"Trace '{constructor.name}' has no points")
                 if points.shape[1] < 2:
-                    raise ValueError(f"Trace '{constructor.name}' needs at least 2 coordinates (x, y), got {points.shape[1]}")
+                    raise ValueError(
+                        f"Trace '{constructor.name}' needs at least 2 coordinates (x, y), got {points.shape[1]}"
+                    )
                 x = points[:, 0]
                 y = points[:, 1]
                 z = points[:, 2] if points.shape[1] > 2 else None
