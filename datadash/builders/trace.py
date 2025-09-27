@@ -15,6 +15,8 @@ from mergedeep import merge
 
 from ..themes.manager import get_theme_manager
 from ..utils import repeat, tile
+from ..standard.properties import StandardTraceProperties
+from ..converters.plotly_converter import convert_standard_to_plotly
 
 # Legacy TraceConstructor class removed - use src.visu.builders.trace_constructor.TraceConstructor
 
@@ -54,112 +56,14 @@ def points_to_xyz_arrays(points):
     return points[0], points[1], points[2]
 
 
-def trace_constructor(
-    x=None, y=None, z=None, points=None, properties=None, name="trace0"
-):
-    properties = {} if properties is None else properties
-
-    if points is not None:
-        # Convert points to x,y,z arrays
-        x, y, z = points_to_xyz_arrays(points)
-
-    # Determine trace type based on presence of z
-    trace_type = go.Scatter3d if z is not None else go.Scatter
-    trace_data = {"x": x, "y": y}
-    if z is not None:
-        trace_data["z"] = z
-
-    return {name: dict(**trace_data, trace_type=trace_type, properties=properties)}
-
-
-def combined_trace_constructor(x, y, headers: str = "xyz", hover_template=None):
-    trace_dict = {}
-    for key, axis in zip(headers, np.asarray(y).T):
-        trace_data = dict(
-            x=x,
-            y=axis,
-            trace_type=go.Scatter,
-            name=key,  # Use the provided header as the trace name
-        )
-        if hover_template:
-            trace_data["hovertemplate"] = hover_template
-        trace_dict[key] = trace_data
-    return trace_dict
-
-
-def subplots_trace_constructor(
-    x,
-    y,
-    rows=None,
-    cols=None,
-    trace_constructor=None,
-    hover_template=None,
-    headers="xyz",
-):
-    if rows is None:
-        rows = [1, 2, 3]
-    if cols is None:
-        cols = [1, 1, 1]
-
-    data = []
-    for axis, header in zip(np.asarray(y).T, headers):
-        trace_data = dict(
-            x=x,
-            y=axis,
-            trace_type=go.Scatter,
-            name=header,
-        )
-        if hover_template:
-            trace_data["hovertemplate"] = hover_template
-        data.append(trace_data)
-
-    return dict(
-        data=data,
-        rows=rows,
-        cols=cols,
-        properties=trace_constructor,
-    )
-
-
-def subplots_trace_constructor_combined_joints_axes(
-    x, y, rows=None, cols=None, hover_template=None, headers=None
-):
-
-    if rows is None:
-        rows = tile([1, 2, 3], 3)
-    if cols is None:
-        cols = repeat([1, 2, 3], 3)
-
-    # Ensure y is properly shaped for iteration over traces
-    y_array = np.asarray(y)
-    if y_array.ndim == 2:
-        # If 2D, transpose so we iterate over columns (traces)
-        y_traces = y_array.T
-    else:
-        # If 1D or already properly shaped, use as-is
-        y_traces = y
-
-    # Default headers if not provided
-    if headers is None:
-        headers = [f"trace_{i}" for i in range(len(y_traces))]
-
-    data = []
-    for yi, header in zip(y_traces, headers):
-        trace_data = dict(
-            x=x,
-            y=yi,
-            trace_type=go.Scatter,
-            name=header,  # Use the provided header as the trace name
-        )
-        if hover_template:
-            trace_data["hovertemplate"] = hover_template
-        data.append(trace_data)
-
-    return dict(
-        data=data,
-        rows=rows,
-        cols=cols,
-    )
+# Legacy trace constructor functions removed.
+# Use the standard trace constructor functions from datadash.standard.trace_constructor instead:
+# - create_standard_trace_constructor()
+# - create_line_trace()
+# - create_scatter_trace()
+# - create_animated_trace()
+# - create_robot_link_trace()
+# - batch_create_traces_from_data()
 
 
 @dataclass
@@ -173,8 +77,8 @@ class TraceConstructor:
 
     Attributes:
         name (str): Trace name in hierarchical format (e.g., "center_gravity.proximal.0")
-        points (npt.ArrayLike): Trace point data
-        points_time (Optional[npt.ArrayLike]): Time data for animated traces
+        data (npt.ArrayLike): Trace point data
+        time (Optional[npt.ArrayLike]): Time data for animated traces
         closed (bool): Whether the trace should be closed (connect last to first point)
         static (bool): Whether this is a static trace (doesn't change with animation)
         properties (Optional[Dict[str, Any]]): Minimal properties (e.g., visibility)
@@ -182,8 +86,8 @@ class TraceConstructor:
     """
 
     name: str
-    points: npt.ArrayLike
-    points_time: Optional[npt.ArrayLike] = None
+    data: npt.ArrayLike
+    time: Optional[npt.ArrayLike] = None
     closed: bool = False
     static: bool = False
     properties: Optional[Dict[str, Any]] = None
@@ -191,12 +95,12 @@ class TraceConstructor:
 
     def __post_init__(self):
         """Post-initialization processing."""
-        # Ensure points is numpy array
-        self.points = np.asarray(self.points)
+        # Ensure data is numpy array
+        self.data = np.asarray(self.data)
 
-        # Ensure points_time is numpy array if provided
-        if self.points_time is not None:
-            self.points_time = np.asarray(self.points_time)
+        # Ensure time is numpy array if provided
+        if self.time is not None:
+            self.time = np.asarray(self.time)
 
         # Initialize properties if None
         if self.properties is None:
@@ -209,7 +113,7 @@ class TraceConstructor:
     @property
     def is_animated(self) -> bool:
         """Check if this trace is animated (has time data and is not static)."""
-        return self.points_time is not None and not self.static
+        return self.time is not None and not self.static
 
     @property
     def base_name(self) -> str:
@@ -243,13 +147,21 @@ class TraceConstructor:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation for TraceBuilder."""
+        # Handle properties conversion
+        properties_dict = {}
+        if self.properties:
+            if isinstance(self.properties, StandardTraceProperties):
+                properties_dict = self.properties.to_dict()
+            else:
+                properties_dict = self.properties.copy()
+
         return {
             "name": self.name,
-            "points": self.points,
-            "points_time": self.points_time,
+            "data": self.data,
+            "time": self.time,
             "closed": self.closed,
             "static": self.static,
-            "properties": self.properties.copy() if self.properties else {},
+            "properties": properties_dict,
         }
 
     def __iter__(self):
@@ -287,7 +199,7 @@ class TraceConstructor:
     @property
     def is_3d(self) -> bool:
         """Check if the trace is 3D (has 3 spatial dimensions)."""
-        return self.points.ndim == 3 and self.points.shape[2] == 3
+        return self.data.ndim == 3 and self.data.shape[2] == 3
 
 
 # ---------- Convenience Function ----------
@@ -330,11 +242,12 @@ def build_traces_with_themes(
 
 def create_trace_constructor(
     name: str,
-    points: npt.ArrayLike,
-    points_time: Optional[npt.ArrayLike] = None,
+    data: npt.ArrayLike,
+    time: Optional[npt.ArrayLike] = None,
     closed: bool = False,
     static: bool = False,
-    **properties,
+    properties: Optional[Union[Dict[str, Any], StandardTraceProperties]] = None,
+    **kwargs,
 ) -> TraceConstructor:
     """Convenience function to create a TraceConstructor.
 
@@ -351,11 +264,12 @@ def create_trace_constructor(
 
     Args:
         name: Trace name in hierarchical format
-        points: Trace point data
-        points_time: Time data for animated traces
+        data: Trace point data
+        time: Time data for animated traces
         closed: Whether trace should be closed
         static: Whether this is a static trace
-        **properties: Additional properties
+        properties: Trace properties (StandardTraceProperties or dict)
+        **kwargs: Additional properties merged with properties
 
     Returns:
         TraceConstructor: New trace constructor instance
@@ -363,74 +277,85 @@ def create_trace_constructor(
     import logging
     import warnings
 
+    # Handle properties parameter and kwargs
+    if properties is None:
+        properties = kwargs
+    elif isinstance(properties, dict) and kwargs:
+        # Merge properties dict with kwargs
+        properties = {**properties, **kwargs}
+    elif isinstance(properties, StandardTraceProperties) and kwargs:
+        # Convert StandardTraceProperties to dict and merge with kwargs
+        properties = {**properties.to_dict(), **kwargs}
+    # If properties is StandardTraceProperties and no kwargs, use as-is
+
     # Handle display_name -> name conversion at source
-    if "display_name" in properties:
+    if isinstance(properties, dict) and "display_name" in properties:
         properties = properties.copy()
         properties["name"] = properties.pop("display_name")
 
     # Convert to numpy array for consistent processing
-    points = np.asarray(points)
+    data = np.asarray(data)
 
-    # Validation: static traces with points_time
-    if static and points_time is not None:
+    # Validation: static traces with time
+    if static and time is not None:
         warnings.warn(
-            f"Static trace '{name}' has points_time defined - ignoring points_time",
+            f"Static trace '{name}' has time defined - ignoring time",
             UserWarning,
         )
-        points_time = None
+        time = None
 
-    # Process points based on static/animated and dimensionality
+    # Process data based on static/animated and dimensionality
     if static:
         # Static traces: reduce dimensionality by taking first time element
-        if points.ndim == 3:
+        if data.ndim == 3:
             # Shape: (i, n, m) -> (i, m) - take first time element
-            points = points[:, 0, :]
-        elif points.ndim == 2:
+            data = data[:, 0, :]
+        elif data.ndim == 2:
             # Already correct format (i, m) - no change needed
             pass
-        elif points.ndim == 1:
+        elif data.ndim == 1:
             # Single point: (m,) -> (1, m)
-            points = points.reshape(1, -1)
+            data = data.reshape(1, -1)
         else:
             raise ValueError(
-                f"Unsupported static trace dimensionality for '{name}': {points.ndim}"
+                f"Unsupported static trace dimensionality for '{name}': {data.ndim}"
             )
     else:
         # Animated traces: ensure (i, n, m) format
-        if points.ndim == 2:
+        if data.ndim == 2:
             # Could be (i, m) -> need to add time dimension or (n, m) single point over time
-            if points_time is not None:
-                n_time = len(points_time)
-                if points.shape[0] == n_time:
+            if time is not None:
+                n_time = len(time)
+                if data.shape[0] == n_time:
                     # Shape: (n, m) - single point over time -> (1, n, m)
-                    points = points.reshape(1, points.shape[0], points.shape[1])
+                    data = data.reshape(1, data.shape[0], data.shape[1])
                 else:
                     raise ValueError(
-                        f"Animated trace '{name}': points shape {points.shape} doesn't match time length {n_time}"
+                        f"Animated trace '{name}': data shape {data.shape} doesn't match time length {n_time}"
                     )
             else:
-                raise ValueError(f"Animated trace '{name}' missing points_time")
-        elif points.ndim == 3:
+                raise ValueError(f"Animated trace '{name}' missing time")
+        elif data.ndim == 3:
             # Already in (i, n, m) format - validate time dimension
-            if points_time is not None:
-                n_time = len(points_time)
-                if points.shape[1] != n_time:
+            if time is not None:
+                n_time = len(time)
+                if data.shape[1] != n_time:
                     raise ValueError(
-                        f"Animated trace '{name}': time dimension {points.shape[1]} doesn't match points_time length {n_time}"
+                        f"Animated trace '{name}': time dimension {data.shape[1]} doesn't match time length {n_time}"
                     )
-        elif points.ndim == 1:
+        elif data.ndim == 1:
             raise ValueError(
-                f"Animated trace '{name}' cannot have 1D points without time structure"
+                f"Animated trace '{name}' cannot have 1D data without time structure"
             )
         else:
             raise ValueError(
-                f"Unsupported animated trace dimensionality for '{name}': {points.ndim}"
+                f"Unsupported animated trace dimensionality for '{name}': {data.ndim}"
             )
 
     return TraceConstructor(
         name=name,
-        points=points,
-        points_time=points_time,
+        data=data,
+        time=time,
         closed=closed,
         static=static,
         properties=properties,
@@ -590,14 +515,27 @@ class TraceBuilder:
         Returns:
             Merged dictionary of properties ready for Plotly.
         """
+        # Convert constructor properties to dict if it's StandardTraceProperties
+        constructor_props = constructor.properties
+        if isinstance(constructor_props, StandardTraceProperties):
+            constructor_props = convert_standard_to_plotly(constructor_props)
+        elif constructor_props is None:
+            constructor_props = {}
+
+        # Get theme properties
         for key in constructor.get_hierarchical_lookup_keys():
             theme = self.theme_manager.get_trace_theme(key)
             if theme:
-                props = merge({}, constructor.properties, theme)
+                # Convert theme properties if they're StandardTraceProperties
+                if isinstance(theme, StandardTraceProperties):
+                    theme = convert_standard_to_plotly(theme)
+                props = merge({}, constructor_props, theme)
                 break
         else:
             default_theme = self.theme_manager.get_trace_theme("default")
-            props = merge({}, constructor.properties, default_theme or {})
+            if isinstance(default_theme, StandardTraceProperties):
+                default_theme = convert_standard_to_plotly(default_theme)
+            props = merge({}, constructor_props, default_theme or {})
 
         # Inject human-readable name from constructor (trace identity)
         if constructor.name and constructor.name != "trace":
@@ -629,9 +567,11 @@ class TraceBuilder:
                 z: 1D array of Z coordinates, or None if 2D
                 resized_points: 3D array (N_points, time, space) for animated traces, else None
         """
-        points = np.asarray(constructor.points)
+        points = np.asarray(constructor.data)
         if points.ndim == 0:
-            raise ValueError("points must not be a scalar")
+            raise ValueError("data must not be a scalar")
+        if points.size == 0:
+            raise ValueError(f"Trace '{constructor.name}' has empty data array")
 
         resized_points: Optional[np.ndarray] = None
 
@@ -650,11 +590,17 @@ class TraceBuilder:
             # Static traces
             if points.ndim == 1:
                 # Single point
-                x = points[0]
-                y = points[1]
-                z = points[2] if len(points) > 2 else None
+                if len(points) < 2:
+                    raise ValueError(f"Trace '{constructor.name}' needs at least 2 coordinates (x, y), got {len(points)}")
+                x = points[0:1]  # Keep as array for consistency
+                y = points[1:2]
+                z = points[2:3] if len(points) > 2 else None
             elif points.ndim == 2:
                 # Multiple points in 2D or 3D: (N_points, space)
+                if points.shape[0] == 0:
+                    raise ValueError(f"Trace '{constructor.name}' has no points")
+                if points.shape[1] < 2:
+                    raise ValueError(f"Trace '{constructor.name}' needs at least 2 coordinates (x, y), got {points.shape[1]}")
                 x = points[:, 0]
                 y = points[:, 1]
                 z = points[:, 2] if points.shape[1] > 2 else None

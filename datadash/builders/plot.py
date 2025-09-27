@@ -8,11 +8,71 @@ import numpy as np
 from mergedeep import merge, Strategy
 
 # Import core utilities
-from .trace import get_plot_range, trace_constructor, TraceBuilder, TraceConstructor
-from .trace import combined_trace_constructor, subplots_trace_constructor
+from .trace import get_plot_range, TraceBuilder, TraceConstructor
 from .figure import PlotFigure, PlotFigure3D, CombinedAxisFigure, SubplotsFigure
 from ..themes.manager import get_theme_manager
 from .layout import PlotLayoutBuilder
+from ..standard.trace_constructor import (
+    create_line_trace,
+    create_scatter_trace,
+    create_standard_trace_constructor,
+    batch_create_traces_from_data,
+)
+
+
+def create_combined_traces(x, y, headers="xyz", hover_template=None):
+    """
+    Create multiple traces from multi-dimensional data.
+
+    Replacement for the old combined_trace_constructor function.
+    """
+    import numpy as np
+
+    trace_dict = {}
+    for key, axis in zip(headers, np.asarray(y).T):
+        trace = create_line_trace(name=key, x_data=x, y_data=axis)
+        if hover_template:
+            # Add hover template to the trace properties
+            # Ensure properties is a dict, not StandardTraceProperties
+            if hasattr(trace.properties, 'to_dict'):
+                props_dict = trace.properties.to_dict()
+                props_dict["hovertemplate"] = hover_template
+                trace.properties = props_dict
+            elif isinstance(trace.properties, dict):
+                trace.properties["hovertemplate"] = hover_template
+            else:
+                trace.properties = {"hovertemplate": hover_template}
+        trace_dict[key] = trace
+    return trace_dict
+
+
+def create_subplots_traces(
+    x, y, rows=None, cols=None, hover_template=None, headers="xyz"
+):
+    """
+    Create traces for subplots.
+
+    Replacement for the old subplots_trace_constructor function.
+    """
+    import numpy as np
+
+    if rows is None:
+        rows = [1, 2, 3]
+    if cols is None:
+        cols = [1, 1, 1]
+
+    data = []
+    for axis, header in zip(np.asarray(y).T, headers):
+        trace = create_line_trace(name=header, x_data=x, y_data=axis)
+        if hover_template:
+            trace.properties["hovertemplate"] = hover_template
+        data.append(trace)
+
+    return {
+        "data": data,
+        "rows": rows,
+        "cols": cols,
+    }
 
 
 # =============================================================================
@@ -158,7 +218,12 @@ class Spatial2DPlotBuilder(SpatialPlotBuilder):
         # Deep-merge the spatial overrides (preserve reversed Z)
         merge(layout, spatial_overrides)
 
-        traces = trace_constructor(x_data, y_data, properties=trace_properties)
+        # Create standard trace constructor with line trace
+        traces = {
+            "trace0": create_line_trace(
+                name="trace0", x_data=x_data, y_data=y_data, **trace_properties
+            )
+        }
 
         return PlotFigure(
             trace_constructor=traces,
@@ -190,9 +255,16 @@ class Spatial3DPlotBuilder(SpatialPlotBuilder):
             {}, self.default_3d_trace_properties, {"marker": {"color": velocity_norm}}
         )
 
-        traces = trace_constructor(
-            x=x_data, y=y_data, z=z_data, properties=trace_properties
-        )
+        # Create standard 3D trace constructor
+        traces = {
+            "trace0": create_line_trace(
+                name="trace0",
+                x_data=x_data,
+                y_data=y_data,
+                z_data=z_data,
+                **trace_properties,
+            )
+        }
 
         # Create 3D layout overrides
         layout_overrides = self.create_3d_layout_overrides()
@@ -434,14 +506,27 @@ class BasePlotBuilder:
 
                 themed_constructors[trace_key] = TraceConstructor(
                     name=trace_data.get("name", trace_key),
-                    points=points,
+                    data=points,
                     properties=final_properties,
                 )
             else:
                 # Handle other formats or fallback
+                # Get data from various possible key names for compatibility
+                data_array = trace_data.get("data")
+                if data_array is None:
+                    data_array = trace_data.get("points")
+                if data_array is None:
+                    data_array = []
+
+                # Convert to numpy array and check if empty
+                data_array = np.asarray(data_array)
+                if data_array.size == 0:
+                    # Skip empty traces to prevent errors
+                    continue
+
                 themed_constructors[trace_key] = TraceConstructor(
                     name=trace_data.get("name", trace_key),
-                    points=trace_data.get("points", []),
+                    data=data_array,
                     properties=theme_props,
                 )
 
@@ -460,7 +545,7 @@ class BasicPlotBuilder(BasePlotBuilder):
     def _create_traces(self, x, y, **kwargs):
         hover_template = None
 
-        return combined_trace_constructor(x, y, hover_template=hover_template)
+        return create_combined_traces(x, y, hover_template=hover_template)
 
     def _create_figure(self, traces, layout, **kwargs):
         return PlotFigure(trace_constructor=traces, layout=layout)
@@ -475,7 +560,7 @@ class CombinedPlotBuilder(BasePlotBuilder):
     def _create_traces(self, x, y, headers="123", **kwargs):
         hover_template = None
 
-        return combined_trace_constructor(
+        return create_combined_traces(
             x, y, hover_template=hover_template, headers=headers
         )
 
@@ -492,7 +577,7 @@ class SubplotsPlotBuilder(BasePlotBuilder):
     def _create_traces(self, x, y, headers="xyz", **kwargs):
         hover_template = None
 
-        result = subplots_trace_constructor(
+        result = create_subplots_traces(
             x, y, hover_template=hover_template, headers=headers
         )
 
