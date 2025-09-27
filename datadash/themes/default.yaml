@@ -4,8 +4,8 @@ dashboard_title: Deltabot Simulator
 
 # Palette assignments for trace coloring
 palettes:
-  primary: 'viridis'      # Default palette for most traces
-  secondary: 'autumn'     # Secondary palette for complementary data
+  primary: 'rgb'      # Default palette for most traces
+  secondary: 'space'     # Secondary palette for complementary data
   tertiary: 'winter'      # Tertiary palette for additional data
 
 colors:
@@ -234,18 +234,18 @@ plotly:
       
   traces:
     default:
-      marker: 
-        size: 4
-        color: "#007bff"
+      # marker: 
+      #   size: 4
+      #   color: "#007bff"
       line: 
         color: "#007bff"
         width: 2
-      mode: lines+markers
+      mode: lines
       visible: true
     x:
-      marker: 
-        size: 3
-        color: "#dc3545"
+      # marker: 
+      #   size: 3
+      #   color: "#dc3545"
       line: 
         color: "#dc3545"
         width: 2
@@ -253,9 +253,9 @@ plotly:
       name: x
       hovertemplate: "%{y:.3f}"
     y:
-      marker: 
-        size: 3
-        color: "#28a745"
+      # marker: 
+      #   size: 3
+      #   color: "#28a745"
       line: 
         color: "#28a745"
         width: 2
@@ -263,9 +263,9 @@ plotly:
       name: y
       hovertemplate: "%{y:.3f}"
     z:
-      marker: 
-        size: 3
-        color: "#007bff"
+      # marker: 
+      #   size: 3
+      #   color: "#007bff"
       line: 
         color: "#007bff"
         width: 2
@@ -275,21 +275,21 @@ plotly:
 
     actuator_0:
       line: 
-        color: "#640D5F"
+        # color: "#640D5F"
         width: 3
       mode: lines
       name: actuator 0
       hovertemplate: "%{y:.3f}"
     actuator_1:
       line: 
-        color: "#EA2264"
+        # color: "#EA2264"
         width: 3
       mode: lines
       name: actuator 1
       hovertemplate: "%{y:.3f}"
     actuator_2:
       line: 
-        color: "#F78D60"
+        # color: "#F78D60"
         width: 3
       mode: lines
       name: actuator 2

@@ -4,6 +4,21 @@
 # Davidson Engineering Ltd. © 2023
 
 # Static palettes with predefined colors
+rgb:
+  type: "static"
+  colors:
+    - "#dc3545"  # Red
+    - "#28a745"  # Green
+    - "#007bff"  # Blue
+
+space:
+  type: "static"
+  colors:
+    - "#0D1164"
+    - "#640D5F"
+    - "#EA2264"
+    - "#F78D60"
+
 autumn:
   type: "static"
   colors:

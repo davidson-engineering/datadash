@@ -267,8 +267,7 @@ class EndEffectorSpatialPlots:
 class BasePlotBuilder:
     """Base class for plot builders that coordinate Figure, trace constructor, and layout"""
 
-    def __init__(self, palette: str = 'primary'):
-        self.palette = palette
+    def __init__(self):
         self.layout_builder = PlotLayoutBuilder
 
     def create_plot(
@@ -284,9 +283,11 @@ class BasePlotBuilder:
         hover_precision=3,
         headers="xyz",
         hovermode="x unified",
+        palette: str = "primary",
         **kwargs,
     ):
         """Create a complete plot by coordinating all components"""
+        self.palette = palette
         # Get the appropriate trace constructor and figure class
         traces = self._create_traces(
             x,
@@ -298,6 +299,9 @@ class BasePlotBuilder:
             headers=headers,
             **kwargs,
         )
+        # Apply trace themes and palette colors to traces
+        traces = self._apply_trace_themes_and_palette_colors(traces)
+        # Create layout
         layout = self._create_layout(
             x,
             y,
@@ -309,7 +313,10 @@ class BasePlotBuilder:
             hovermode=hovermode,
             **kwargs,
         )
-        figure_instance = self._create_figure(traces, layout, **kwargs)
+        # Create figure instance with already-themed traces
+        figure_instance = self._create_figure_with_themed_traces(
+            traces, layout, **kwargs
+        )
         if secondary_axis:
             figure_instance.add_secondary_axis(**secondary_axis)
         return figure_instance.figure
@@ -336,50 +343,158 @@ class BasePlotBuilder:
         """Create figure instance - to be implemented by subclasses"""
         raise NotImplementedError("Subclasses must implement _create_figure")
 
+    def _create_figure_with_themed_traces(self, traces, layout, **kwargs):
+        """Create figure instance with already-themed plotly traces.
+
+        Override this if the figure needs special handling of themed traces.
+        """
+        # Convert themed traces to the format expected by the figure
+        if isinstance(traces, dict):
+            trace_constructors = {key: trace for key, trace in traces.items()}
+        else:
+            trace_constructors = {f"trace_{i}": trace for i, trace in enumerate(traces)}
+
+        # Create figure and directly set traces
+        figure_instance = self._create_figure({}, layout, **kwargs)
+        figure_instance.trace_constructor = trace_constructors
+        figure_instance._themed_traces = traces  # Store themed traces
+        return figure_instance
+
     def _get_mode(self):
         """Get the layout mode for this plot type"""
         raise NotImplementedError("Subclasses must implement _get_mode")
 
-    def _apply_palette_colors(self, traces):
-        """Apply palette colors to traces based on the selected palette.
+    def _apply_trace_themes_and_palette_colors(self, traces):
+        """Apply both individual trace themes and palette colors to traces.
+
+        This centralizes all trace theming in the plot builders, ensuring:
+        1. Palette colors are calculated for the full trace group
+        2. Colors are applied as properties during TraceConstructor creation
+        3. Individual trace themes are merged with palette colors
 
         Args:
-            traces: Dictionary of trace data or list of traces
+            traces: Dictionary of TraceConstructor objects or list of trace constructors
 
         Returns:
-            Updated traces with palette colors applied
+            Updated traces with themes and palette colors applied
         """
         from ..themes.manager import get_theme_manager
+        from .trace import TraceBuilder, TraceConstructor
+
+        theme_manager = get_theme_manager()
 
         if isinstance(traces, dict):
             trace_list = list(traces.values())
             trace_keys = list(traces.keys())
+        elif isinstance(traces, list):
+            trace_list = traces
+            trace_keys = [f"trace_{i}" for i in range(len(trace_list))]
         else:
             trace_list = traces
-            trace_keys = None
+            trace_keys = [f"trace_{i}" for i in range(len(trace_list))]
 
-        # Get colors from the theme manager
-        theme_manager = get_theme_manager()
+        # Step 1: Get colors from the palette system (needs full trace group)
         palette_colors = theme_manager.get_palette_colors(self.palette, len(trace_list))
 
-        # Apply colors to traces
-        for i, trace_data in enumerate(trace_list):
+        # Step 2: Apply palette colors as properties to each TraceConstructor
+        builder = TraceBuilder()
+        themed_traces = []
+
+        for i, (trace_data, trace_key) in enumerate(zip(trace_list, trace_keys)):
             color = palette_colors[i]
 
-            # Apply color to both line and marker properties
-            if 'line' not in trace_data:
-                trace_data['line'] = {}
-            if 'marker' not in trace_data:
-                trace_data['marker'] = {}
+            # Convert to TraceConstructor if needed
+            if isinstance(trace_data, TraceConstructor):
+                constructor = trace_data
+            elif hasattr(trace_data, "x"):
+                # This is already a plotly trace - extract data and convert
+                import numpy as np
 
-            trace_data['line']['color'] = color
-            trace_data['marker']['color'] = color
+                points = np.column_stack((trace_data.x, trace_data.y))
+                if hasattr(trace_data, "z") and trace_data.z is not None:
+                    points = np.column_stack((points, trace_data.z))
 
-        return traces
+                constructor = TraceConstructor(
+                    name=getattr(trace_data, "name", trace_key),
+                    points=points,
+                    properties={},
+                )
+            elif (
+                isinstance(trace_data, dict) and "x" in trace_data and "y" in trace_data
+            ):
+                # This is a dict-like trace constructor with x, y data
+                import numpy as np
+
+                x_data = trace_data["x"]
+                y_data = trace_data["y"]
+                z_data = trace_data.get("z", None)
+
+                if z_data is not None:
+                    points = np.column_stack((x_data, y_data, z_data))
+                else:
+                    points = np.column_stack((x_data, y_data))
+
+                # Extract other properties excluding coordinate data and trace_type
+                properties = {
+                    k: v
+                    for k, v in trace_data.items()
+                    if k not in ["x", "y", "z", "trace_type", "name"]
+                }
+
+                constructor = TraceConstructor(
+                    name=trace_data.get("name", trace_key),
+                    points=points,
+                    properties=properties,
+                )
+            else:
+                # Fallback - assume it's a TraceConstructor dict format
+                constructor = TraceConstructor(
+                    name=trace_data.get("name", trace_key),
+                    points=trace_data.get("points", []),
+                    properties=trace_data.get("properties", {}),
+                )
+
+            # Step 3: Apply palette color as properties
+            palette_properties = {"line": {"color": color}, "marker": {"color": color}}
+
+            # Merge palette properties with existing properties
+            merged_properties = constructor.properties.copy()
+            if "line" in merged_properties:
+                merged_properties["line"].update(palette_properties["line"])
+            else:
+                merged_properties["line"] = palette_properties["line"]
+
+            if "marker" in merged_properties:
+                merged_properties["marker"].update(palette_properties["marker"])
+            else:
+                merged_properties["marker"] = palette_properties["marker"]
+
+            # Create new constructor with palette colors
+            updated_constructor = TraceConstructor(
+                name=constructor.name,
+                points=constructor.points,
+                points_time=constructor.points_time,
+                closed=constructor.closed,
+                static=constructor.static,
+                properties=merged_properties,
+            )
+
+            # Build trace with theme support (TraceBuilder will apply individual trace themes)
+            themed_trace = builder.build_trace(updated_constructor)
+            themed_traces.append(themed_trace)
+
+        # Reconstruct the original structure
+        if isinstance(traces, dict):
+            return {key: trace for key, trace in zip(trace_keys, themed_traces)}
+        elif isinstance(traces, list):
+            return themed_traces
+        else:
+            return themed_traces
 
     def _get_palette_colors(self, count):
         """Helper method to get palette colors."""
         from ..themes.manager import get_theme_manager
+
         theme_manager = get_theme_manager()
         return theme_manager.get_palette_colors(self.palette, count)
 
@@ -387,20 +502,14 @@ class BasePlotBuilder:
 class CombinedPlotBuilder(BasePlotBuilder):
     """Builder for combined axis plots (CombinedAxisFigure)"""
 
-    def __init__(self, palette: str = 'primary'):
-        super().__init__(palette)
-
     def _create_traces(self, x, y, headers="123", **kwargs):
         from .trace import combined_trace_constructor
 
         hover_template = None
 
-        traces = combined_trace_constructor(
+        return combined_trace_constructor(
             x, y, hover_template=hover_template, headers=headers
         )
-
-        # Apply palette colors
-        return self._apply_palette_colors(traces)
 
     def _create_figure(self, traces, layout, **kwargs):
         from .figure import CombinedAxisFigure
@@ -414,9 +523,6 @@ class CombinedPlotBuilder(BasePlotBuilder):
 class SubplotsPlotBuilder(BasePlotBuilder):
     """Builder for subplot plots (SubplotsFigure)"""
 
-    def __init__(self, palette: str = 'primary'):
-        super().__init__(palette)
-
     def _create_traces(self, x, y, headers="xyz", **kwargs):
         from .trace import subplots_trace_constructor
 
@@ -426,19 +532,46 @@ class SubplotsPlotBuilder(BasePlotBuilder):
             x, y, hover_template=hover_template, headers=headers
         )
 
-        # Apply palette colors to the data array
-        if isinstance(result, dict) and 'data' in result:
-            palette_colors = self._get_palette_colors(len(result['data']))
-            for i, trace_data in enumerate(result['data']):
-                color = palette_colors[i]
-                if 'line' not in trace_data:
-                    trace_data['line'] = {}
-                if 'marker' not in trace_data:
-                    trace_data['marker'] = {}
-                trace_data['line']['color'] = color
-                trace_data['marker']['color'] = color
-
+        # Don't apply theming here - it will be handled in the base class
         return result
+
+    def _apply_trace_themes_and_palette_colors(self, traces):
+        """Override to handle subplots structure with data/rows/cols."""
+        if isinstance(traces, dict) and "data" in traces:
+            # Apply theming to the data array only
+            themed_data = super()._apply_trace_themes_and_palette_colors(traces["data"])
+            # Reconstruct the subplots structure
+            return {
+                "data": themed_data,
+                "rows": traces["rows"],
+                "cols": traces["cols"],
+                "properties": traces.get("properties", None),
+            }
+        else:
+            # Fallback to base implementation
+            return super()._apply_trace_themes_and_palette_colors(traces)
+
+    def _create_figure_with_themed_traces(self, traces, layout, **kwargs):
+        """Override to handle subplots with themed traces."""
+        from .figure import SubplotsFigure
+
+        # For subplots, traces has the structure {'data': [...], 'rows': [...], 'cols': [...]}
+        subplots_constructor = kwargs.get("subplots_constructor", {})
+        figure_instance = SubplotsFigure(
+            trace_constructor=traces,
+            layout=layout,
+            subplots_contructor=subplots_constructor,
+        )
+
+        # Store the themed traces data for direct use
+        if isinstance(traces, dict) and "data" in traces:
+            figure_instance._themed_traces = {
+                "data": traces["data"],
+                "rows": traces["rows"],
+                "cols": traces["cols"],
+            }
+
+        return figure_instance
 
     def _create_figure(self, traces, layout, **kwargs):
         from .figure import SubplotsFigure
@@ -457,18 +590,12 @@ class SubplotsPlotBuilder(BasePlotBuilder):
 class BasicPlotBuilder(BasePlotBuilder):
     """Builder for basic single plots (PlotFigure)"""
 
-    def __init__(self, palette: str = 'primary'):
-        super().__init__(palette)
-
     def _create_traces(self, x, y, **kwargs):
         from .trace import combined_trace_constructor
 
         hover_template = None
 
-        traces = combined_trace_constructor(x, y, hover_template=hover_template)
-
-        # Apply palette colors
-        return self._apply_palette_colors(traces)
+        return combined_trace_constructor(x, y, hover_template=hover_template)
 
     def _create_figure(self, traces, layout, **kwargs):
         return PlotFigure(trace_constructor=traces, layout=layout)

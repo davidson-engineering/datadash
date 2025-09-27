@@ -37,7 +37,7 @@ class StaticPalette(ColorPalette):
         self.colors = colors
 
     def generate_colors(self, count: int) -> Tuple[str, ...]:
-        """Generate colors using HSV interpolation between first and last colors."""
+        """Generate colors by interpolating across all defined palette colors."""
         if count == 0:
             return tuple()
 
@@ -50,8 +50,17 @@ class StaticPalette(ColorPalette):
         if len(self.colors) == 1:
             return (self.colors[0],) * count
 
-        # Use HSV interpolation between first and last colors
-        return self._interpolate_hsv(self.colors[0], self.colors[-1], count)
+        # If we have exactly the same number of colors as requested, return them directly
+        if count == len(self.colors):
+            return tuple(self.colors)
+
+        # If we have fewer colors than requested, interpolate between all palette colors
+        if count > len(self.colors):
+            return self._interpolate_across_palette(count)
+
+        # If we have more colors than requested, sample evenly from the palette
+        if count < len(self.colors):
+            return self._sample_from_palette(count)
 
     def _interpolate_hsv(self, start_color: str, end_color: str, count: int) -> Tuple[str, ...]:
         """Interpolate between start and end colors in HSV space."""
@@ -102,6 +111,83 @@ class StaticPalette(ColorPalette):
 
         # Ensure result is in [0, 1) range
         return interpolated % 1.0
+
+    def _interpolate_across_palette(self, count: int) -> Tuple[str, ...]:
+        """Interpolate across all colors in the palette to generate count colors."""
+        if count <= len(self.colors):
+            return tuple(self.colors[:count])
+
+        # Create segments between consecutive palette colors
+        segments = len(self.colors) - 1
+
+        result_colors = []
+
+        for i in range(count):
+            # Calculate which segment this color falls into
+            position = i / (count - 1) * segments  # position in [0, segments]
+            segment_idx = int(position)  # which segment (0 to segments-1)
+            segment_pos = position - segment_idx  # position within segment (0 to 1)
+
+            # Handle edge case for the last color
+            if segment_idx >= segments:
+                result_colors.append(self.colors[-1])
+                continue
+
+            # Interpolate between the two colors in this segment
+            start_color = self.colors[segment_idx]
+            end_color = self.colors[segment_idx + 1]
+
+            if segment_pos == 0.0:
+                # Exact match to start color
+                result_colors.append(start_color)
+            else:
+                # Use continuous interpolation within the segment
+                interpolated_color = self._interpolate_hsv_continuous(
+                    start_color, end_color, segment_pos
+                )
+                result_colors.append(interpolated_color)
+
+        return tuple(result_colors)
+
+    def _sample_from_palette(self, count: int) -> Tuple[str, ...]:
+        """Sample evenly spaced colors from the palette."""
+        if count >= len(self.colors):
+            return tuple(self.colors)
+
+        # Sample evenly across the palette
+        indices = []
+        for i in range(count):
+            # Map i from [0, count-1] to [0, len(self.colors)-1]
+            idx = i * (len(self.colors) - 1) / (count - 1)
+            indices.append(int(round(idx)))
+
+        return tuple(self.colors[i] for i in indices)
+
+    def _interpolate_hsv_continuous(self, start_color: str, end_color: str, position: float) -> str:
+        """Interpolate between two colors at a specific position (0.0 to 1.0)."""
+        if position <= 0.0:
+            return start_color
+        if position >= 1.0:
+            return end_color
+
+        # Convert to RGB first, then to HSV
+        start_rgb = mcolors.to_rgb(start_color)
+        end_rgb = mcolors.to_rgb(end_color)
+
+        start_hsv = mcolors.rgb_to_hsv(start_rgb)
+        end_hsv = mcolors.rgb_to_hsv(end_rgb)
+
+        # Interpolate hue with wraparound consideration
+        h_interpolated = self._interpolate_hue(start_hsv[0], end_hsv[0], position)
+
+        # Linear interpolation for saturation and value
+        s_interpolated = start_hsv[1] + (end_hsv[1] - start_hsv[1]) * position
+        v_interpolated = start_hsv[2] + (end_hsv[2] - start_hsv[2]) * position
+
+        # Convert back to RGB then hex
+        interpolated_hsv = np.array([h_interpolated, s_interpolated, v_interpolated])
+        interpolated_rgb = mcolors.hsv_to_rgb(interpolated_hsv)
+        return mcolors.to_hex(interpolated_rgb)
 
 
 class GeneratedPalette(ColorPalette):
