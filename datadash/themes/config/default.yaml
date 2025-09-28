@@ -11,21 +11,24 @@ palettes:
 colors:
   primary_bg: &color_primary_bg "#ffffff"
   secondary_bg: &color_secondary_bg "#f8f9fa"
-  text_primary: &color_text_primary "#212529"
-  text_secondary: &color_text_secondary "#6c757d"
+  text_primary: &color_text_primary "#4b4d51"
+  text_secondary: &color_text_secondary "#6e7073"
   border: &color_border "#dee2e6"
-  accent: &color_accent "#007bff"
+  accent: &color_accent "#343538"
+
+styles:
+  border: &border_style "1.5px solid #dee2e6"
 
 fonts:
   monospace: &monospace_font "'DroidSansMonoNerdFontMono, 'monospace'"
   sans: &sans_font "'sans-serif'"
-  title: &title_font "'DroidSansMonoNerdFontMono', 'Arial'"
-  tab: &tab_font "'DroidSansMonoNerdFont', 'Arial'"
-  body: &body_font "'DroidSansMonoNerdFont', 'Arial'"
-  plots: &plots_font "'Menlo', 'Arial'"
-  footer: &footer_font "'InputMono-Light', 'monospace'"
-  table: &table_font "'DroidSansMonoNerdFont', 'monospace'"
-  hoverlabels: &hoverlabels_font "'Arial'"
+  title: &title_font "'DroidSansMonoNerdFontPropo', 'Arial'"
+  tab: &tab_font "'DroidSansMonoNerdFontPropo', 'Arial'"
+  body: &body_font "'DroidSansMonoNerdFontPropo', 'Arial'"
+  plots: &plots_font "DroidSansMonoNerdFontPropo"
+  footer: &footer_font "'DroidSansMonoNerdFontPropo', 'monospace'"
+  table: &table_font "'DroidSansMonoNerdFontPropo', 'monospace'"
+  hoverlabels: &hoverlabels_font "DroidSansMonoNerdFontPropo"
 
 icons:
   tabs:
@@ -43,19 +46,21 @@ styles:
   header:
     textAlign: center
     fontFamily: *title_font
-    fontSize: 4rem
-    fontWeight: 500
+    fontSize: 3.5rem
+    fontWeight: 600
     color: *color_text_primary
-    height: 120px
+    height: 110px
     flex-shrink: 0
-    background: rgb(248, 249, 250)
+    background: *color_secondary_bg
     align-content: center
     margin-bottom: 0px
+    text-transform: unset
+    letter-spacing: 0.8rem
 
   tab:
     background: *color_primary_bg
-    color: "#495057"
-    border: "1px solid #dee2e6"
+    color: *color_text_secondary
+    border: *border_style
     borderRadius: 18px
     padding: "0.5rem 1rem"
     fontFamily: *tab_font
@@ -68,23 +73,24 @@ styles:
     maxWidth: 70%
     
   tab_selected:
-    background: "#007bff"
+    background: *color_accent 
     fontFamily: *tab_font
     borderRadius: 18px
     fontWeight: 800
     fontSize: 1.3rem
     fontStyle: bold
     color: "#ffffff"
-    borderColor: "#007bff"
+    borderColor: *color_accent 
     display: "flex"
     alignItems: "center"
     justifyContent: "center"
     lineHeight: 1.25
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1)
-    background: 'linear-gradient(#4a90e2, #357ab8)'
+    background: *color_accent 
+    # background: 'linear-gradient(#4a90e2, #357ab8)'
     
   tab_container:
-    background: "#f8f9fa"
+    background: *color_secondary_bg
     margin: 0rem
     padding: 0rem 4rem 0.5rem
     gap: 2rem
@@ -92,7 +98,7 @@ styles:
     boxShadow: "0 2px 2px rgba(0,0,0,0.1)"
     height: 80px
     flex-shrink: 0
-    border-bottom: 1px solid rgb(222, 226, 230)
+    border-bottom: *border_style
 
 
   body_container:
@@ -141,9 +147,9 @@ styles:
     width: 100%;
     textAlign: center
     padding: 1rem
-    background: "#f8f9fa"
-    color: "#6c757d"
-    borderTop: "1px solid #dee2e6"
+    background: *color_secondary_bg
+    color: *color_text_secondary
+    borderTop: *border_style
     fontFamily: *footer_font
     fontWeight: 400
     fontSize: 1.2rem
@@ -173,7 +179,8 @@ plotly:
       color: *color_text_primary
       linecolor: "#dee2e6"
       tickcolor: "#dee2e6"
-      zerolinecolor: "#007bff"
+      zerolinecolor: "#777777"
+      zerolinewidth: 2
       title:
         font:
           weight: 400
@@ -185,24 +192,15 @@ plotly:
       linecolor: "#dee2e6"
       tickcolor: "#dee2e6"
       zeroline: True
-      zerolinecolor: "#999999"
+      zerolinecolor: "#777777"
+      zerolinewidth: 2
       title:
         font:
           weight: 400
       tickfont:
         weight: 400
     yaxis2:
-      gridcolor: "#dee2e6"
-      color: *color_text_primary
-      linecolor: "#dee2e6"
-      tickcolor: "#dee2e6"
       zeroline: False
-      zerolinecolor: "#999999"
-      title:
-        font:
-          weight: 400
-      tickfont:
-        weight: 400
     showlegend: False
     scene:
       xaxis:
@@ -247,7 +245,25 @@ plotly:
 
     traj:
       mode: lines
-      hovertemplate: "%{y:.2f}"
+    traj.spatial:
+      marker: 
+        # line:
+        #   width: 4
+        #   colorscale: "Viridis"
+        colorscale: "Viridis"
+        size: 6
+        # symbol: x-thin
+    traj.spatial.3d:
+      marker: 
+        # line:
+        #   width: 4
+        #   colorscale: "Viridis"
+        colorscale: "Viridis"
+        size: 4
+        # symbol: x
+        colorbar: {"title": "Velocity [m/s]"}
+        
+
 
     actuator:
       mode: lines
@@ -255,8 +271,10 @@ plotly:
 
     actuator.tn_curve:
       marker:
-        size: 8
-        symbol: cross
+        line:
+          width: 2
+        size: 6
+        symbol: x-thin
       mode: markers
       hovertemplate: "%{y:.2f}"
 

@@ -18,14 +18,16 @@ class ThemeManager:
         self,
         theme_name: str = "default",
         overrides_config: Dict[str, Any] = None,
-        custom_config: Dict[str, Any] = None  # Deprecated - use overrides_config
+        custom_config: Dict[str, Any] = None,  # Deprecated - use overrides_config
     ):
         self.theme_name = theme_name
         self.palette_registry = get_palette_registry()
         self._load_palettes()
 
         # Load theme configuration using three-level hierarchy
-        self.theme_config = self._load_hierarchical_theme_config(theme_name, overrides_config or custom_config)
+        self.theme_config = self._load_hierarchical_theme_config(
+            theme_name, overrides_config or custom_config
+        )
 
     def _load_hierarchical_theme_config(
         self, theme_name: str, overrides_config: Dict[str, Any] = None
@@ -69,13 +71,17 @@ class ThemeManager:
             theme_file = Path(__file__).parent / f"{theme_name}.yaml"
             if not theme_file.exists():
                 if theme_name == "default":
-                    raise FileNotFoundError(f"Default theme file not found: {theme_file}")
+                    raise FileNotFoundError(
+                        f"Default theme file not found: {theme_file}"
+                    )
                 return {}  # Return empty config for missing non-default themes
 
         with open(theme_file, "r") as f:
             return yaml.safe_load(f) or {}
 
-    def _apply_overrides(self, base_config: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, Any]:
+    def _apply_overrides(
+        self, base_config: Dict[str, Any], overrides: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Apply override configuration.
 
         All override values take absolute priority and cannot be overridden by
@@ -89,7 +95,9 @@ class ThemeManager:
                 if key not in result_config:
                     result_config[key] = {}
                 if isinstance(result_config[key], dict):
-                    result_config[key] = self._apply_overrides(result_config[key], value)
+                    result_config[key] = self._apply_overrides(
+                        result_config[key], value
+                    )
                 else:
                     # Override non-dict with dict
                     result_config[key] = self._apply_overrides({}, value)
@@ -258,7 +266,9 @@ class ThemeManager:
         colors = self.palette_registry.generate_colors(palette_name, count)
         return colors
 
-    def get_themed_trace_properties(self, trace_name: str, palette_level: str, trace_index: int, total_traces: int) -> Dict[str, Any]:
+    def get_themed_trace_properties(
+        self, trace_name: str, palette_level: str, trace_index: int, total_traces: int
+    ) -> Dict[str, Any]:
         """Get complete themed properties for a trace including palette colors.
 
         Respects the priority hierarchy:
@@ -281,15 +291,15 @@ class ThemeManager:
 
         # Only apply palette colors if no colors are explicitly defined in any theme level
         needs_line_color = (
-            "line" not in base_theme or
-            "color" not in base_theme.get("line", {}) or
-            base_theme.get("line", {}).get("color") is None
+            "line" not in base_theme
+            or "color" not in base_theme.get("line", {})
+            or base_theme.get("line", {}).get("color") is None
         )
 
         needs_marker_color = (
-            "marker" not in base_theme or
-            "color" not in base_theme.get("marker", {}) or
-            base_theme.get("marker", {}).get("color") is None
+            "marker" not in base_theme
+            or "color" not in base_theme.get("marker", {})
+            or base_theme.get("marker", {}).get("color") is None
         )
 
         if needs_line_color or needs_marker_color:
@@ -314,13 +324,15 @@ class ThemeManager:
                     if "marker" not in themed_properties:
                         themed_properties["marker"] = {}
                     themed_properties["marker"]["color"] = color
-
+                    themed_properties["marker"]["line_color"] = color
                 return themed_properties
 
         # Return base theme without palette colors if they're not needed or are already specified
         return base_theme
 
-    def assign_palette_colors_to_traces(self, trace_names: list[str], palette_level: str) -> Dict[str, Dict[str, Any]]:
+    def assign_palette_colors_to_traces(
+        self, trace_names: list[str], palette_level: str
+    ) -> Dict[str, Dict[str, Any]]:
         """Assign palette colors to a group of traces and return themed properties.
 
         Args:
@@ -360,11 +372,11 @@ class ThemeManager:
                 "1. Default (lowest priority)",
                 "2. Custom theme",
                 "3. Overrides (highest priority)",
-                "4. Palette colors (applied only when no explicit colors are set)"
+                "4. Palette colors (applied only when no explicit colors are set)",
             ],
             "available_themes": self._list_available_themes(),
             "palette_assignments": self.list_available_palettes(),
-            "override_info": "All override values take absolute priority over theme and palette colors"
+            "override_info": "All override values take absolute priority over theme and palette colors",
         }
 
     def _list_available_themes(self) -> list[str]:
@@ -398,39 +410,30 @@ class ThemeManager:
                 "layout": {
                     "paper_bgcolor": "#ffffff",
                     "plot_bgcolor": "#f8f9fa",
-                    "font": {
-                        "size": 14,
-                        "color": "#212529"
-                    }
+                    "font": {"size": 14, "color": "#212529"},
                 },
                 "traces": {
                     "x": {
                         "line": {
                             "color": "#dc3545",  # Overrides any theme or palette color
-                            "width": 3
+                            "width": 3,
                         }
                     },
                     "y": {
                         "line": {
                             "color": "#28a745",  # Overrides any theme or palette color
-                            "width": 3
+                            "width": 3,
                         }
                     },
                     "trajectory": {
                         "line": {
                             "width": 4  # Width override, color will come from theme/palette
                         }
-                    }
-                }
+                    },
+                },
             },
-            "colors": {
-                "primary_bg": "#ffffff",
-                "accent": "#007bff"
-            },
-            "settings": {
-                "trace_margin": 0.2,
-                "animation_frame_rate": 30
-            }
+            "colors": {"primary_bg": "#ffffff", "accent": "#007bff"},
+            "settings": {"trace_margin": 0.2, "animation_frame_rate": 30},
         }
 
 
@@ -438,7 +441,9 @@ class ThemeManager:
 _theme_manager = None
 
 
-def get_theme_manager(theme_name: str = None, overrides_config: Dict[str, Any] = None) -> ThemeManager:
+def get_theme_manager(
+    theme_name: str = None, overrides_config: Dict[str, Any] = None
+) -> ThemeManager:
     """Get the global theme manager instance with optional overrides.
 
     Args:

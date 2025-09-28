@@ -3,9 +3,9 @@
 # 2023/01/23
 # Davidson Engineering Ltd. © 2023
 
-from .plotly_converter import PlotlyPropertyConverter, convert_standard_to_plotly
+# from .plotly_converter import PlotlyPropertyConverter, convert_standard_to_plotly
 
-__all__ = [
-    "PlotlyPropertyConverter",
-    "convert_standard_to_plotly",
-]
+# __all__ = [
+#     "PlotlyPropertyConverter",
+#     "convert_standard_to_plotly",
+# ]

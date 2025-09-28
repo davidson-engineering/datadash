@@ -15,10 +15,11 @@ from ..themes.manager import get_theme_manager
 from .layout import PlotLayoutBuilder
 from ..standard.trace_constructor import (
     create_line_trace,
-    create_scatter_trace,
-    create_standard_trace_constructor,
-    batch_create_traces_from_data,
+    # create_scatter_trace,
+    # create_standard_trace_constructor,
+    # batch_create_traces_from_data,
 )
+from plotly.colors import sample_colorscale
 
 import numpy as np
 
@@ -257,13 +258,22 @@ class Spatial2DPlotBuilder(SpatialPlotBuilder):
         x_range = self.calculate_range(x_data)
         y_range = self.calculate_range(y_data)
 
+        marker_color = velocity_norm
+        # return np.mean(velocity_norm) value of Viridis colorscale as
+        line_color = sample_colorscale("Viridis", [np.mean(marker_color)])[0]
+
         trace_properties = merge(
             {},
             self.default_trace_properties,
             {
-                "marker": {"color": velocity_norm},
-                "line": {"color": velocity_norm},
-                "name": "traj",
+                "marker": {
+                    "line": {
+                        "color": marker_color,
+                    },
+                    "color": marker_color,
+                },
+                "line": {"color": line_color},
+                "name": "traj.spatial.2d",
                 "customdata": velocity_norm,
                 "hovertemplate": self.create_hover_template(
                     axis_names[0], axis_names[1]
@@ -317,24 +327,31 @@ class Spatial3DPlotBuilder(SpatialPlotBuilder):
         super().__init__(margin)
 
         self.default_3d_trace_properties = {
-            "mode": "lines+markers",
-            "marker": {
-                "size": 3,
-                "colorscale": "Viridis",
-                "colorbar": {"title": "Velocity [m/s]"},
-            },
-            "line": {"width": 4},
-            "name": "Trajectory",
+            "name": "traj.spatial.3d",
         }
 
     def create_3d_plot(self, position, velocity_norm):
         x_data, y_data, z_data = self.extract_position_data(position, [0, 1, 2])
 
-        trace_properties = merge(
-            {}, self.default_3d_trace_properties, {"marker": {"color": velocity_norm}}
-        )
+        marker_color = velocity_norm
+        # return np.mean(velocity_norm) value of Viridis colorscale as
+        line_color = sample_colorscale("Viridis", [np.mean(marker_color)])[0]
 
-        trace_properties["name"] = trace_properties.get("name", "trace_0")
+        trace_properties = merge(
+            {},
+            self.default_trace_properties,
+            {
+                "marker": {
+                    "line": {
+                        "color": marker_color,
+                    },
+                    "color": marker_color,
+                },
+                "line": {"color": line_color},
+                "name": "traj.spatial.3d",
+                "customdata": velocity_norm,
+            },
+        )
 
         # Create standard 3D trace constructor
         traces = {

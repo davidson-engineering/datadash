@@ -14,9 +14,11 @@ from typing import Any, Dict, List, Union
 from mergedeep import merge
 
 from ..themes.manager import get_theme_manager
-from ..utils import repeat, tile
+
+# from ..utils import repeat, tile
 from ..standard.properties import StandardTraceProperties
-from ..converters.plotly_converter import convert_standard_to_plotly
+
+# from ..converters.plotly_converter import convert_standard_to_plotly
 
 # Legacy TraceConstructor class removed - use src.visu.builders.trace_constructor.TraceConstructor
 
@@ -54,16 +56,6 @@ def points_to_xyz_arrays(points):
             # (N, 3) format - transpose
             return points[:, 0], points[:, 1], points[:, 2]
     return points[0], points[1], points[2]
-
-
-# Legacy trace constructor functions removed.
-# Use the standard trace constructor functions from datadash.standard.trace_constructor instead:
-# - create_standard_trace_constructor()
-# - create_line_trace()
-# - create_scatter_trace()
-# - create_animated_trace()
-# - create_robot_link_trace()
-# - batch_create_traces_from_data()
 
 
 @dataclass
@@ -503,9 +495,10 @@ class TraceBuilder:
         """
         # Convert constructor properties to dict if it's StandardTraceProperties
         constructor_props = constructor.properties
-        if isinstance(constructor_props, StandardTraceProperties):
-            constructor_props = convert_standard_to_plotly(constructor_props)
-        elif constructor_props is None:
+        # if isinstance(constructor_props, StandardTraceProperties):
+        #     constructor_props = convert_standard_to_plotly(constructor_props)
+        # elif constructor_props is None:
+        if constructor_props is None:
             constructor_props = {}
 
         # Get theme properties
@@ -513,14 +506,14 @@ class TraceBuilder:
             theme = self.theme_manager.get_trace_theme(key)
             if theme:
                 # Convert theme properties if they're StandardTraceProperties
-                if isinstance(theme, StandardTraceProperties):
-                    theme = convert_standard_to_plotly(theme)
+                # if isinstance(theme, StandardTraceProperties):
+                #     theme = convert_standard_to_plotly(theme)
                 props = merge({}, constructor_props, theme)
                 break
         else:
             default_theme = self.theme_manager.get_trace_theme("default")
-            if isinstance(default_theme, StandardTraceProperties):
-                default_theme = convert_standard_to_plotly(default_theme)
+            # if isinstance(default_theme, StandardTraceProperties):
+            #     default_theme = convert_standard_to_plotly(default_theme)
             props = merge({}, constructor_props, default_theme or {})
 
         # Inject human-readable name from constructor (trace identity)
@@ -677,6 +670,3 @@ class TraceBuilder:
         if z is None:
             return go.Scatter(x=x, y=y, **props)
         return go.Scatter3d(x=x, y=y, z=z, **props)
-
-
-# Legacy conversion function removed - no longer needed
