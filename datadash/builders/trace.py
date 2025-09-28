@@ -437,7 +437,6 @@ class TraceBuilder:
         self,
         constructor: TraceConstructor,
         number_frames: Optional[int] = None,
-        use_precomputed_themes: bool = True,
     ) -> Union[go.Scatter, go.Scatter3d]:
         """
         Build a single Plotly trace from a TraceConstructor object.
@@ -445,22 +444,12 @@ class TraceBuilder:
         Args:
             constructor: TraceConstructor containing points, properties, and metadata.
             number_frames: Optional override to resample animated traces to a fixed number of frames.
-            use_precomputed_themes: If True, assumes constructor.properties contains pre-computed themes
-                                   and skips additional theme resolution.
 
         Returns:
             go.Scatter or go.Scatter3d: A Plotly trace ready for plotting.
         """
-        # Get properties - either use pre-computed themes or resolve them
-        if use_precomputed_themes:
-            # Use properties as-is (already themed by theme manager)
-            props = constructor.properties.copy()
-            # Ensure name is set
-            if constructor.name and constructor.name != "trace":
-                props["name"] = constructor.name
-        else:
-            # Traditional theme resolution
-            props = self._resolve_properties(constructor)
+        # Always use theme resolution
+        props = self._resolve_properties(constructor)
 
         # Prepare point arrays for plotting, optionally resampling animated traces
         x, y, z, resized_points = self._prepare_xyzn(constructor, number_frames)
@@ -475,14 +464,13 @@ class TraceBuilder:
         return trace
 
     def build_traces(
-        self, constructors: List[TraceConstructor], use_precomputed_themes: bool = True
+        self, constructors: List[TraceConstructor]
     ) -> List[Union[go.Scatter, go.Scatter3d]]:
         """
         Build multiple Plotly traces from a list of TraceConstructor objects.
 
         Args:
             constructors: List of TraceConstructor objects.
-            use_precomputed_themes: If True, assumes properties contain pre-computed themes.
 
         Returns:
             List of Plotly traces.
@@ -490,9 +478,7 @@ class TraceBuilder:
         traces: List[Union[go.Scatter, go.Scatter3d]] = []
         for c in constructors:
             try:
-                traces.append(
-                    self.build_trace(c, use_precomputed_themes=use_precomputed_themes)
-                )
+                traces.append(self.build_trace(c))
             except Exception as e:
                 self.logger.error(
                     f"Failed to build trace '{getattr(c, 'name', '?')}': {e}"
@@ -517,6 +503,7 @@ class TraceBuilder:
         """
         # Convert constructor properties to dict if it's StandardTraceProperties
         constructor_props = constructor.properties
+        print(f"DEBUG TRACE: trace '{constructor.name}' has properties: {constructor_props}")
         if isinstance(constructor_props, StandardTraceProperties):
             constructor_props = convert_standard_to_plotly(constructor_props)
         elif constructor_props is None:

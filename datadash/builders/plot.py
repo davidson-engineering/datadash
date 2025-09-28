@@ -419,31 +419,14 @@ class BasePlotBuilder:
         raise NotImplementedError("Subclasses must implement _create_figure")
 
     def _create_figure_with_themed_traces(self, traces, layout, **kwargs):
-        """Create figure instance with themed TraceConstructor objects.
+        """Create figure instance with TraceConstructor objects.
 
         Args:
-            traces: Dictionary of themed TraceConstructor objects
+            traces: Dictionary of TraceConstructor objects
             layout: Layout configuration
         """
-        # Build final plotly traces from themed constructors
-        builder = TraceBuilder()
-
-        if isinstance(traces, dict):
-            final_traces = {}
-            for key, constructor in traces.items():
-                final_traces[key] = builder.build_trace(
-                    constructor, use_precomputed_themes=True
-                )
-        else:
-            final_traces = []
-            for constructor in traces:
-                final_traces.append(
-                    builder.build_trace(constructor, use_precomputed_themes=True)
-                )
-
-        # Create figure and set the final traces
-        figure_instance = self._create_figure({}, layout, **kwargs)
-        figure_instance._themed_traces = final_traces
+        # Create figure - traces will be built on demand with theme resolution
+        figure_instance = self._create_figure(traces, layout, **kwargs)
         return figure_instance
 
     def _get_mode(self):
@@ -614,7 +597,7 @@ class SubplotsPlotBuilder(BasePlotBuilder):
 
             for constructor in traces["data"].values():
                 final_trace_data.append(
-                    builder.build_trace(constructor, use_precomputed_themes=True)
+                    builder.build_trace(constructor)
                 )
 
             # Create the subplots figure
@@ -624,13 +607,6 @@ class SubplotsPlotBuilder(BasePlotBuilder):
                 layout=layout,
                 subplots_contructor=subplots_constructor,
             )
-
-            # Store the final traces for direct use
-            figure_instance._themed_traces = {
-                "data": final_trace_data,
-                "rows": traces["rows"],
-                "cols": traces["cols"],
-            }
 
             return figure_instance
         else:

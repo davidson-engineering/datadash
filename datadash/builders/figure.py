@@ -181,8 +181,13 @@ class PlotFigure:
             # Convert standard properties to Plotly format
             properties = PlotlyPropertyConverter.convert_properties(constructor.properties)
         else:
-            # Use raw properties dictionary
-            properties = constructor.properties.to_dict()
+            # Use raw properties dictionary - handle both dict and objects with to_dict()
+            if hasattr(constructor.properties, 'to_dict'):
+                properties = constructor.properties.to_dict()
+            elif isinstance(constructor.properties, dict):
+                properties = constructor.properties.copy()
+            else:
+                properties = {}
 
         # Determine if 2D or 3D based on data shape
         if data.ndim >= 2 and data.shape[-1] >= 3:
@@ -254,15 +259,16 @@ class PlotFigure:
 
     @property
     def traces(self, trace_constructor=None):
-        # If we have pre-themed traces from plot builders, use them
-        if hasattr(self, "_themed_traces") and self._themed_traces:
-            return self._themed_traces
-
         self.trace_constructor = (
             self.trace_constructor if trace_constructor is None else trace_constructor
         )
+
+        # Use TraceBuilder for proper theme resolution
+        from .trace import TraceBuilder
+        builder = TraceBuilder()
+
         return {
-            key: self._build_trace_without_theme(constructor)
+            key: builder.build_trace(constructor)
             for key, constructor in self.trace_constructor.items()
         }
 
@@ -277,8 +283,13 @@ class PlotFigure:
             if surface_constructor is None
             else surface_constructor
         )
+
+        # Use TraceBuilder for proper theme resolution
+        from .trace import TraceBuilder
+        builder = TraceBuilder()
+
         return {
-            key: self._build_trace_without_theme(constructor)
+            key: builder.build_trace(constructor)
             for key, constructor in self.surface_constructor.items()
         }
 
@@ -610,11 +621,10 @@ class SubplotsFigure(PlotFigure):
 
     @property
     def traces(self):
-        # If we have pre-themed traces from plot builders, use them
-        if hasattr(self, "_themed_traces") and self._themed_traces:
-            return self._themed_traces
+        # Use TraceBuilder for proper theme resolution
+        from .trace import TraceBuilder
+        builder = TraceBuilder()
 
-        # Build traces without theme application - themes are applied in plot builders
         traces_data = []
         for data in self.trace_constructor["data"]:
             # Convert to TraceConstructor if needed
@@ -624,22 +634,29 @@ class SubplotsFigure(PlotFigure):
                 constructor = data
 
             # Check if layout has showlegend=False and apply to individual traces
-            merged_properties = constructor.properties.copy()
+            if hasattr(constructor.properties, 'copy'):
+                merged_properties = constructor.properties.copy()
+            elif isinstance(constructor.properties, dict):
+                merged_properties = constructor.properties.copy()
+            else:
+                merged_properties = constructor.properties
+
             if hasattr(self, "layout") and self.layout.get("showlegend") is False:
-                merged_properties["showlegend"] = False
+                if isinstance(merged_properties, dict):
+                    merged_properties["showlegend"] = False
 
             # Create updated constructor with merged properties
             updated_constructor = TraceConstructor(
                 name=constructor.name,
                 data=constructor.data,
-                data_time=constructor.data_time,
+                time=constructor.time,
                 closed=constructor.closed,
                 static=constructor.static,
                 properties=merged_properties,
             )
 
-            # Build trace without theme application
-            traces_data.append(self._build_trace_without_theme(updated_constructor))
+            # Build trace with theme application
+            traces_data.append(builder.build_trace(updated_constructor))
 
         return {
             "data": traces_data,
@@ -954,18 +971,17 @@ class SubplotsFigure(PlotFigure):
 class CombinedAxisFigure(PlotFigure):
     @property
     def traces(self):
-        # If we have pre-themed traces from plot builders, use them
-        if hasattr(self, "_themed_traces") and self._themed_traces:
-            return self._themed_traces
+        # Use TraceBuilder for proper theme resolution
+        from .trace import TraceBuilder
+        builder = TraceBuilder()
 
-        # Build traces without theme application - themes are applied in plot builders
         traces = {}
         for key, constructor in self.trace_constructor.items():
             # Convert to TraceConstructor if needed
             if not isinstance(constructor, TraceConstructor):
                 constructor = self._convert_legacy_constructor(constructor)
 
-            # Build trace without theme application
-            traces[key] = self._build_trace_without_theme(constructor)
+            # Build trace with theme application
+            traces[key] = builder.build_trace(constructor)
 
         return traces

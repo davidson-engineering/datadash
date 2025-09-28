@@ -1,0 +1,119 @@
+# Example Theme Override Configuration
+# This demonstrates the three-level theme hierarchy system
+
+# Override Information
+_info: "Example theme override configuration demonstrating priority system"
+_documentation: |
+  Priority hierarchy (highest to lowest):
+  1. Overrides (this file) - ALL VALUES have highest priority
+  2. Custom theme (e.g., futuristic.yaml)
+  3. Default theme (default.yaml)
+  4. Palette colors (applied only when no explicit colors are set)
+
+# Plotly-specific overrides
+plotly:
+  layout:
+    # Override background colors - these take priority over any theme setting
+    paper_bgcolor: "#f0f0f0"
+    plot_bgcolor: "#ffffff"
+
+    # Font settings - all override theme defaults
+    font:
+      size: 18              # Override font size
+      color: "#333333"      # Override font color
+      family: "'Arial', sans-serif"
+
+    # Axis styling overrides
+    xaxis:
+      gridcolor: "#e0e0e0"
+      zerolinecolor: "#ff6b6b"  # Custom red zero line
+      title:
+        font:
+          size: 16
+    yaxis:
+      gridcolor: "#e0e0e0"
+      zerolinecolor: "#ff6b6b"
+
+    # 3D scene overrides
+    scene:
+      bgcolor: "#fafafa"
+      xaxis:
+        backgroundcolor: "#ffffff"
+        gridcolor: "#ddd"
+      yaxis:
+        backgroundcolor: "#ffffff"
+        gridcolor: "#ddd"
+      zaxis:
+        backgroundcolor: "#ffffff"
+        gridcolor: "#ddd"
+
+  # Trace-specific overrides
+  traces:
+    # Force specific colors for axis traces
+    x:
+      line:
+        color: "#dc3545"  # Force red for X traces (overrides palette)
+        width: 4
+      name: "X-Axis Override"
+
+    y:
+      line:
+        color: "#28a745"  # Force green for Y traces (overrides palette)
+        width: 4
+      name: "Y-Axis Override"
+
+    z:
+      line:
+        color: "#007bff"  # Force blue for Z traces (overrides palette)
+        width: 4
+      name: "Z-Axis Override"
+
+    # Robot components
+    base:
+      line:
+        color: "#2c3e50"  # Override base color
+        width: 8
+      marker:
+        color: "#2c3e50"  # Override marker color too
+        size: 10
+
+    proximal:
+      line:
+        width: 6          # Override width, color will use theme/palette
+
+    distal:
+      line:
+        width: 3          # Force thin lines for distal links
+        # color is not specified - will use theme or palette
+
+    # Trajectory traces
+    trajectory:
+      line:
+        width: 5          # Force thick trajectory lines
+        # color not specified - will use theme or palette
+      mode: "lines+markers"
+
+    trajectory_center:
+      marker:
+        size: 8
+        symbol: "diamond"
+        line:
+          width: 2
+
+# Dashboard styling overrides
+colors:
+  primary_bg: "#ffffff"
+  accent: "#e74c3c"        # Force red accent color
+  text_primary: "#2c3e50"
+
+# Settings overrides
+settings:
+  trace_margin: 0.25       # Force larger margins
+  animation_frame_rate: 60 # Override frame rate
+  debug_mode: true         # Force debug mode on
+
+# Custom palette assignments (override theme palette choices)
+palettes:
+  primary: 'viridis'       # Force viridis palette
+  secondary: 'categorical_cool'
+  tertiary: 'sequential_blue'

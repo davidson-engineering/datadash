@@ -5,7 +5,7 @@ dashboard_title: Deltabot Simulator
 # Palette assignments for trace coloring
 palettes:
   primary: 'rgb'      # Default palette for most traces
-  secondary: 'space'     # Secondary palette for complementary data
+  secondary: 'winter'     # Secondary palette for complementary data
   tertiary: 'winter'      # Tertiary palette for additional data
 
 colors:
@@ -238,7 +238,7 @@ plotly:
       #   size: 4
       #   color: "#007bff"
       line: 
-        color: "#007bff"
+        # color: "#007bff"
         width: 2
       mode: lines
       visible: true
@@ -274,21 +274,21 @@ plotly:
       hovertemplate: "%{y:.3f}"
 
     actuator_0:
-      line: 
+      line:
         # color: "#640D5F"
         width: 3
       mode: lines
       name: actuator 0
       hovertemplate: "%{y:.3f}"
     actuator_1:
-      line: 
+      line:
         # color: "#EA2264"
         width: 3
       mode: lines
       name: actuator 1
       hovertemplate: "%{y:.3f}"
     actuator_2:
-      line: 
+      line:
         # color: "#F78D60"
         width: 3
       mode: lines
