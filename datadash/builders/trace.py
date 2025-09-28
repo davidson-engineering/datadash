@@ -503,7 +503,6 @@ class TraceBuilder:
         """
         # Convert constructor properties to dict if it's StandardTraceProperties
         constructor_props = constructor.properties
-        print(f"DEBUG TRACE: trace '{constructor.name}' has properties: {constructor_props}")
         if isinstance(constructor_props, StandardTraceProperties):
             constructor_props = convert_standard_to_plotly(constructor_props)
         elif constructor_props is None:

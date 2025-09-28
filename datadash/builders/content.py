@@ -264,7 +264,7 @@ def create_split_window_builder(**kwargs):
     )
 
 
-def create_split_window_layout(main_plot, grid_plots, **kwargs):
+def create_split_window_layout(main_plots, grid_plots, **kwargs):
     """
     Convenience function to create a split window layout with a main plot and 2x2 grid
 
@@ -294,10 +294,14 @@ def create_split_window_layout(main_plot, grid_plots, **kwargs):
 
     grid_layout = grid_builder.create_layout(grid_content)
 
+    main_builder = ContentBuilder()
+    grid_content = [[main_plots[0]], [main_plots[1]]]
+    main_layout = main_builder.create_layout(grid_content)
+
     # Create the main split layout
     split_builder = create_split_window_builder(**kwargs)
 
     # Create the split layout with main plot and grid
-    split_content = [[main_plot, grid_layout]]
+    split_content = [[main_layout, grid_layout]]
 
     return split_builder.create_layout(split_content)

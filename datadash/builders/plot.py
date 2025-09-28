@@ -4,6 +4,7 @@
 # Davidson Engineering Ltd. © 2023
 
 import logging
+from typing import Union
 import numpy as np
 from mergedeep import merge, Strategy
 
@@ -19,31 +20,107 @@ from ..standard.trace_constructor import (
     batch_create_traces_from_data,
 )
 
+import numpy as np
 
-def create_combined_traces(x, y, headers="xyz", hover_template=None):
+
+def create_combined_traces(
+    x: Union[np.ndarray, list],
+    y: Union[np.ndarray, list],
+    headers: list | None = None,
+    hover_template: str | None = None,
+):
     """
-    Create multiple traces from multi-dimensional data.
+    Create multiple Plotly traces from multi-dimensional data for line plots.
 
-    Replacement for the old combined_trace_constructor function.
+    Args:
+        x: Array-like, 1D or 2D x-axis data.
+        y: Array-like, 2D y-axis data.
+        headers: Iterable of trace names. Defaults to numeric indices if None.
+        hover_template: Optional string for hover text formatting.
+
+    Returns:
+        dict: Dictionary of traces keyed by headers.
+
+    Raises:
+        ValueError: If x and y shapes are incompatible or headers length mismatches y's columns.
     """
-    import numpy as np
+    # Convert inputs to NumPy arrays for consistency
+    x = np.asarray(x)
+    y = np.asarray(y)
 
-    trace_dict = {}
-    for key, axis in zip(headers, np.asarray(y).T):
-        trace = create_line_trace(name=key, x_data=x, y_data=axis)
-        if hover_template:
-            # Add hover template to the trace properties
-            # Ensure properties is a dict, not StandardTraceProperties
-            if hasattr(trace.properties, "to_dict"):
-                props_dict = trace.properties.to_dict()
-                props_dict["hovertemplate"] = hover_template
-                trace.properties = props_dict
-            elif isinstance(trace.properties, dict):
-                trace.properties["hovertemplate"] = hover_template
-            else:
-                trace.properties = {"hovertemplate": hover_template}
-        trace_dict[key] = trace
-    return trace_dict
+    # Validate input shapes
+    if len(y.shape) != 2:
+        raise ValueError("y must be 2D")
+    if len(x.shape) > 2:
+        raise ValueError("x must be 1D or 2D")
+
+    n_cols = y.shape[1]
+    # Set default headers if None
+    headers = range(n_cols) if headers is None else list(headers)
+
+    # Validate headers length
+    if len(headers) != n_cols:
+        raise ValueError(
+            f"Length of headers ({len(headers)}) must match y's columns ({n_cols})"
+        )
+
+    # Handle 1D x by tiling to match y's shape
+    if len(x.shape) == 1:
+        x = np.tile(x[:, np.newaxis], (1, n_cols))
+    elif x.shape[1] != n_cols:
+        raise ValueError(
+            f"x's columns ({x.shape[1]}) must match y's columns ({n_cols})"
+        )
+
+    # Create traces efficiently using list comprehension
+    traces = {
+        key: create_line_trace(name=key, x_data=x[:, i], y_data=y[:, i])
+        for i, key in enumerate(headers)
+    }
+
+    # Apply hover template if provided
+    if hover_template:
+        for trace in traces.values():
+            props = (
+                trace.properties.to_dict()
+                if hasattr(trace.properties, "to_dict")
+                else trace.properties if isinstance(trace.properties, dict) else {}
+            )
+            props["hovertemplate"] = hover_template
+            trace.properties = props
+
+    return traces
+
+
+# def create_combined_traces(x, y, headers="xyz", hover_template=None):
+#     """
+#     Create multiple traces from multi-dimensional data.
+
+#     Replacement for the old combined_trace_constructor function.
+#     """
+#     import numpy as np
+
+#     trace_dict = {}
+#     x = np.asarray(x)
+#     y = np.asarray(y)
+#     if len(x.shape) == 1:
+#         # tile x to y.shape
+#         x = np.tile(x, y.shape[1])
+#     for key, x_data, y_data in zip(headers, x.T, y.T):
+#         trace = create_line_trace(name=key, x_data=x_data, y_data=y_data)
+#         if hover_template:
+#             # Add hover template to the trace properties
+#             # Ensure properties is a dict, not StandardTraceProperties
+#             if hasattr(trace.properties, "to_dict"):
+#                 props_dict = trace.properties.to_dict()
+#                 props_dict["hovertemplate"] = hover_template
+#                 trace.properties = props_dict
+#             elif isinstance(trace.properties, dict):
+#                 trace.properties["hovertemplate"] = hover_template
+#             else:
+#                 trace.properties = {"hovertemplate": hover_template}
+#         trace_dict[key] = trace
+#     return trace_dict
 
 
 def create_subplots_traces(
@@ -185,7 +262,8 @@ class Spatial2DPlotBuilder(SpatialPlotBuilder):
             self.default_trace_properties,
             {
                 "marker": {"color": velocity_norm},
-                "name": plot_name,
+                "line": {"color": velocity_norm},
+                "name": "traj",
                 "customdata": velocity_norm,
                 "hovertemplate": self.create_hover_template(
                     axis_names[0], axis_names[1]
@@ -596,9 +674,7 @@ class SubplotsPlotBuilder(BasePlotBuilder):
             final_trace_data = []
 
             for constructor in traces["data"].values():
-                final_trace_data.append(
-                    builder.build_trace(constructor)
-                )
+                final_trace_data.append(builder.build_trace(constructor))
 
             # Create the subplots figure
             subplots_constructor = kwargs.get("subplots_constructor", {})

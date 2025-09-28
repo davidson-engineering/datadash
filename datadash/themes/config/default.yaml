@@ -5,7 +5,7 @@ dashboard_title: Deltabot Simulator
 # Palette assignments for trace coloring
 palettes:
   primary: 'rgb'      # Default palette for most traces
-  secondary: 'winter'     # Secondary palette for complementary data
+  secondary: 'space'     # Secondary palette for complementary data
   tertiary: 'winter'      # Tertiary palette for additional data
 
 colors:
@@ -25,6 +25,7 @@ fonts:
   plots: &plots_font "'Menlo', 'Arial'"
   footer: &footer_font "'InputMono-Light', 'monospace'"
   table: &table_font "'DroidSansMonoNerdFont', 'monospace'"
+  hoverlabels: &hoverlabels_font "'Arial'"
 
 icons:
   tabs:
@@ -230,70 +231,34 @@ plotly:
         dtick: 0.1        # spacing between ticks
       # aspectmode: manual
       # aspectratio: {x: 1, y: 1, z: 1}
-    
-      
+    hoverlabel:
+      font_size: 12
+      font_family: *hoverlabels_font
+
   traces:
     default:
-      # marker: 
-      #   size: 4
-      #   color: "#007bff"
+      marker: 
+        size: 8
       line: 
-        # color: "#007bff"
-        width: 2
-      mode: lines
+        width: 3
+      mode: lines+markers
       visible: true
-    x:
-      # marker: 
-      #   size: 3
-      #   color: "#dc3545"
-      line: 
-        color: "#dc3545"
-        width: 2
-      mode: lines
-      name: x
-      hovertemplate: "%{y:.3f}"
-    y:
-      # marker: 
-      #   size: 3
-      #   color: "#28a745"
-      line: 
-        color: "#28a745"
-        width: 2
-      mode: lines
-      name: y
-      hovertemplate: "%{y:.3f}"
-    z:
-      # marker: 
-      #   size: 3
-      #   color: "#007bff"
-      line: 
-        color: "#007bff"
-        width: 2
-      mode: lines
-      name: z
       hovertemplate: "%{y:.3f}"
 
-    actuator_0:
-      line:
-        # color: "#640D5F"
-        width: 3
+    traj:
       mode: lines
-      name: actuator 0
-      hovertemplate: "%{y:.3f}"
-    actuator_1:
-      line:
-        # color: "#EA2264"
-        width: 3
+      hovertemplate: "%{y:.2f}"
+
+    actuator:
       mode: lines
-      name: actuator 1
-      hovertemplate: "%{y:.3f}"
-    actuator_2:
-      line:
-        # color: "#F78D60"
-        width: 3
-      mode: lines
-      name: actuator 2
-      hovertemplate: "%{y:.3f}"
+      hovertemplate: "%{y:.2f}"
+
+    actuator.tn_curve:
+      marker:
+        size: 8
+        symbol: cross
+      mode: markers
+      hovertemplate: "%{y:.2f}"
 
     # Robot-specific trace properties
     nacelle:
@@ -383,12 +348,9 @@ plotly:
       visible: true
     cog:
       marker:
-        size: 7
-        color: "#FFFFFF"
-        line: 
-          color: "#000000"
-          width: 5
-      marker_symbol: circle
+        size: 12
+        color: "#000000"
+        symbol: circle-x
       mode: markers
       visible: true
     trajectory.path:
