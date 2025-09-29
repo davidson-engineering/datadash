@@ -19,6 +19,7 @@ colors:
 global-styles:
   border:
     bars: &border_style "1.25px solid #dee2e6"
+    dropdown: &dropdown_border "0.75px solid #dee2e6"
   # box_shadow:
     # upper: &upper-shadow "0px 6px 10px 0px #000000 inset"
     # main: &main-shadow "0px -4px 6px 0px rgba(0, 0, 0, 0.1) inset, 0px 4px 6px 0px rgba(0, 0, 0, 0.1) inset"
@@ -51,10 +52,10 @@ styles:
   header:
     textAlign: center
     fontFamily: *title_font
-    fontSize: 3.5rem
+    fontSize: 2.5rem
     fontWeight: 600
     color: *color_text_primary
-    height: 110px
+    height: 80px
     flex-shrink: 0
     background: *color_secondary_bg
     align-content: center
@@ -69,27 +70,27 @@ styles:
     borderRadius: 18px
     padding: "0.5rem 1rem"
     fontFamily: *tab_font
-    fontWeight: 600
-    fontSize: 1.1em
+    fontWeight: 500
+    fontSize: 1em
     display: "flex"
     alignItems: center
     justifyContent: center
     lineHeight: 1.25
-    maxWidth: 70%
+    maxWidth: 80%
     
   tab_selected:
     background: *color_accent 
     fontFamily: *tab_font
     borderRadius: 18px
-    fontWeight: 800
-    fontSize: 1.3rem
-    fontStyle: bold
+    border: *border_style
+    fontWeight: 700
+    fontSize: 1rem
     color: "#ffffff"
-    borderColor: *color_accent 
     display: "flex"
     alignItems: "center"
     justifyContent: "center"
     lineHeight: 1.25
+    maxWidth: 80%
     background: *color_accent 
     
   tab_container:
@@ -98,10 +99,9 @@ styles:
     padding: 0rem 4rem 0.5rem
     gap: 2rem
     justifyContent: center
-    height: 80px
+    height: 60px
     flex-shrink: 0
     border-bottom: *border_style
-
 
   body_container:
     background: *color_primary_bg
@@ -115,19 +115,20 @@ styles:
     
   main_container:
     background: *color_primary_bg
-    flex: 1 1 auto
+    flex: 1 0 auto
     padding: 0rem
     overflow-x: hidden
     overflow-y: auto
+    flex-direction: column
 
   graph_container:
     background: *color_primary_bg
-    margin-top: 5px
+    margin-top: 0px
     flex: 1 1 auto
     overflow-y: auto
     gap: 0rem
-    width: 100%
-    height: 100%
+    # width: 100%
+    # height: 100%
     # max-width: 1200px
     # min-width: 600px
 
@@ -166,11 +167,13 @@ styles:
     fontSize: 1rem
     minWidth: 200px
     display: "block"
-    padding: "1rem 10rem 1rem 10rem"
+    padding: "0.5rem 10% 0rem"
+    height: auto  # Let it size naturally
+    flex-shrink: 0
 
   dropdown:
     background: *color_secondary_bg
-    border: *border_style
+    border: *dropdown_border
     borderRadius: 8px
 
 plotly:
@@ -179,7 +182,7 @@ plotly:
     plot_bgcolor: "#ffffff"
     font:
       family: *plots_font
-      size: 16
+      size: 14
       color: *color_text_primary
     autosize: True
     title:

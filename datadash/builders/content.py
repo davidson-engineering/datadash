@@ -164,7 +164,7 @@ def create_single_column_builder(width=12, **kwargs):
         "width": width,  # Full width column
         "style": {"text-align": "center"},
     }
-    default_row_props = {"justify": "center", "style": {"margin-bottom": "5rem"}}
+    default_row_props = {"justify": "center", "style": {"margin-bottom": "0rem"}}
 
     row_properties = merge_properties(
         default_row_props, kwargs.get("row_properties", {})
@@ -244,7 +244,7 @@ def create_split_window_builder(**kwargs):
         "justify": "center",  # Center the columns within the row
         "style": {
             "margin": "0 auto",  # Center the row on the page
-            "margin-bottom": "1rem",
+            "margin-bottom": "0rem",
         },
     }
 

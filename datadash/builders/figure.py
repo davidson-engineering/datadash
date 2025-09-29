@@ -154,6 +154,7 @@ class PlotFigure:
 
         self._figure = None
         self._traces_built = False  # Track if traces have been built
+        self._computed_layout = None  # Cache computed layout
 
     def _build_trace_without_theme(self, constructor):
         """Build trace without theme application - themes should be applied in plot builders.
@@ -278,6 +279,8 @@ class PlotFigure:
         self.trace_constructor = trace_constructor
         # Reset lazy loading when traces are changed
         self._traces_built = False
+        # Layout can be reused, only figure needs reset
+        self._figure = None
 
     @property
     def surfaces(self, surface_constructor=None):
@@ -444,21 +447,27 @@ class PlotFigure:
     def figure(self):
         # Return existing figure if it exists, otherwise build it lazily
         if self._figure is None:
-            fig = go.Figure()
-            fig.add_traces(list(self.traces.values()))
+            # Use cached layout if available
+            if self._computed_layout is None:
+                # Apply theme-specific layout (expensive operation)
+                from ..themes.manager import get_theme_manager
 
-            # Apply theme-specific layout
-            from ..themes.manager import get_theme_manager
+                theme = get_theme_manager()
+                plotly_theme = theme.get_plotly_theme()
 
-            theme = get_theme_manager()
-            plotly_theme = theme.get_plotly_theme()
+                # Optimize layout merging to reduce Plotly's processing overhead
+                themed_layout = self.layout.copy()
+                if theme_layout := plotly_theme.get("layout"):
+                    # Use simpler update instead of deep merge for better performance
+                    self._fast_layout_merge(themed_layout, theme_layout)
 
-            # Merge theme layout with existing layout, preserving specific axis settings
-            themed_layout = self.layout.copy()
-            if theme_layout := plotly_theme.get("layout"):
-                merge(themed_layout, theme_layout)
+                self._computed_layout = themed_layout
 
-            fig.update_layout(themed_layout)
+            # Create figure with pre-computed layout to avoid update_layout() bottleneck
+            fig = go.Figure(
+                data=list(self.traces.values()),
+                layout=go.Layout(**self._computed_layout)
+            )
             self._figure = fig
 
         return self._figure
@@ -466,8 +475,26 @@ class PlotFigure:
     @figure.setter
     def figure(self, fig):
         self._figure = fig
-        # Reset trace building when figure is manually set
-        self._traces_built = False
+        # Don't reset layout cache when figure is manually set
+        # Layout cache can still be reused
+
+    def _fast_layout_merge(self, target, source):
+        """Fast layout merging that minimizes Plotly's internal processing.
+
+        Uses simple dict updates for top-level properties and selective merging
+        for nested properties to reduce the complexity that Plotly needs to process.
+        """
+        for key, value in source.items():
+            if key in target and isinstance(target[key], dict) and isinstance(value, dict):
+                # Only deep merge for specific nested objects
+                if key in ['xaxis', 'yaxis', 'scene', 'font']:
+                    target[key].update(value)
+                else:
+                    # Simple replacement for other nested objects
+                    target[key] = value
+            else:
+                # Simple assignment for top-level properties
+                target[key] = value
 
 
 class PlotFigure3D(PlotFigure):

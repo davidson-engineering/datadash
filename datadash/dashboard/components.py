@@ -186,7 +186,7 @@ def create_job_selector_dropdown(job_options, current_job_id=None):
                 id="job-selector",
                 options=job_options,
                 value=current_job_id,
-                # style=dropdown_style,
+                style=dropdown_style,
                 clearable=False,
             ),
         ],

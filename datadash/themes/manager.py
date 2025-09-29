@@ -29,6 +29,9 @@ class ThemeManager:
             theme_name, overrides_config or custom_config
         )
 
+        # Cache for expensive operations
+        self._plotly_theme_cache = None
+
     def _load_hierarchical_theme_config(
         self, theme_name: str, overrides_config: Dict[str, Any] = None
     ) -> Dict[str, Any]:
@@ -187,7 +190,10 @@ class ThemeManager:
         return self.styles.get(component, {}).copy()
 
     def get_plotly_theme(self) -> Dict[str, Any]:
-        """Get Plotly-specific theme configuration with auto-generated numbered axes"""
+        """Get Plotly-specific theme configuration with auto-generated numbered axes (cached)"""
+        if self._plotly_theme_cache is not None:
+            return self._plotly_theme_cache
+
         plotly_theme = self.theme_config.get("plotly", {}).copy()
 
         # Auto-generate numbered axis styles for subplots
@@ -211,6 +217,8 @@ class ThemeManager:
                 if key.startswith("xaxis") or key.startswith("yaxis"):
                     layout[key].update(value)
 
+        # Cache the result
+        self._plotly_theme_cache = plotly_theme
         return plotly_theme
 
     def get_trace_theme(self, trace_name: str) -> Dict[str, Any]:

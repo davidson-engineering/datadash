@@ -50,8 +50,8 @@ def create_combined_traces(
         raise ValueError("x must be 1D or 2D")
 
     n_cols = y.shape[1]
-    # Set default headers if None
-    headers = range(n_cols) if headers is None else list(headers)
+    # Set default headers if None - use string names for TraceConstructor
+    headers = [f"trace_{i}" for i in range(n_cols)] if headers is None else list(headers)
 
     # Validate headers length
     if len(headers) != n_cols:
