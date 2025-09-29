@@ -9,16 +9,10 @@ import numpy as np
 from mergedeep import merge, Strategy
 
 # Import core utilities
-from .trace import get_plot_range, TraceBuilder, TraceConstructor
+from .trace import get_plot_range, TraceBuilder, TraceConstructor, create_trace_constructor
 from .figure import PlotFigure, PlotFigure3D, CombinedAxisFigure, SubplotsFigure
 from ..themes.manager import get_theme_manager
 from .layout import PlotLayoutBuilder
-from ..standard.trace_constructor import (
-    create_line_trace,
-    # create_scatter_trace,
-    # create_standard_trace_constructor,
-    # batch_create_traces_from_data,
-)
 from plotly.colors import sample_colorscale
 
 import numpy as np
@@ -75,7 +69,11 @@ def create_combined_traces(
 
     # Create traces efficiently using list comprehension
     traces = {
-        key: create_line_trace(name=key, x_data=x[:, i], y_data=y[:, i])
+        key: create_trace_constructor(
+            name=key,
+            data=np.column_stack([x[:, i], y[:, i]]),
+            static=True
+        )
         for i, key in enumerate(headers)
     }
 
@@ -108,10 +106,10 @@ def create_combined_traces(
 #         # tile x to y.shape
 #         x = np.tile(x, y.shape[1])
 #     for key, x_data, y_data in zip(headers, x.T, y.T):
-#         trace = create_line_trace(name=key, x_data=x_data, y_data=y_data)
+#         trace = create_trace_constructor(name=key, data=np.column_stack([x_data, y_data]), static=True)
 #         if hover_template:
 #             # Add hover template to the trace properties
-#             # Ensure properties is a dict, not StandardTraceProperties
+#             # Ensure properties is a dict
 #             if hasattr(trace.properties, "to_dict"):
 #                 props_dict = trace.properties.to_dict()
 #                 props_dict["hovertemplate"] = hover_template
@@ -141,7 +139,11 @@ def create_subplots_traces(
 
     data = []
     for axis, header in zip(np.asarray(y).T, headers):
-        trace = create_line_trace(name=header, x_data=x, y_data=axis)
+        trace = create_trace_constructor(
+            name=header,
+            data=np.column_stack([x, axis]),
+            static=True
+        )
         if hover_template:
             trace.properties["hovertemplate"] = hover_template
         data.append(trace)
@@ -308,9 +310,13 @@ class Spatial2DPlotBuilder(SpatialPlotBuilder):
         trace_properties["name"] = trace_properties.get("name", "trace_0")
 
         # Create standard trace constructor with line trace
+        trace_name = trace_properties.pop("name")
         traces = {
-            trace_properties["name"]: create_line_trace(
-                x_data=x_data, y_data=y_data, **trace_properties
+            trace_name: create_trace_constructor(
+                name=trace_name,
+                data=np.column_stack([x_data, y_data]),
+                static=True,
+                properties=trace_properties
             )
         }
 
@@ -354,12 +360,13 @@ class Spatial3DPlotBuilder(SpatialPlotBuilder):
         )
 
         # Create standard 3D trace constructor
+        trace_name = trace_properties.pop("name")
         traces = {
-            trace_properties["name"]: create_line_trace(
-                x_data=x_data,
-                y_data=y_data,
-                z_data=z_data,
-                **trace_properties,
+            trace_name: create_trace_constructor(
+                name=trace_name,
+                data=np.column_stack([x_data, y_data, z_data]),
+                static=True,
+                properties=trace_properties
             )
         }
 

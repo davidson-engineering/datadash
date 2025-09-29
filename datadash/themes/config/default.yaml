@@ -161,18 +161,17 @@ styles:
 
   dropdown-container:
     color: *color_text_primary
+    background: *color_primary_bg
     fontFamily: *body_font
     fontSize: 1rem
     minWidth: 200px
     display: "block"
+    padding: "1rem 10rem 1rem 10rem"
 
   dropdown:
     background: *color_secondary_bg
     border: *border_style
-    padding: "1rem 10rem 1rem 10rem"
     borderRadius: 8px
-    width: "100%"
-    fontFamily: *body_font
 
 plotly:
   layout:

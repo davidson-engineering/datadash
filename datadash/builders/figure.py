@@ -153,6 +153,7 @@ class PlotFigure:
             self.layout = merged_layout
 
         self._figure = None
+        self._traces_built = False  # Track if traces have been built
 
     def _build_trace_without_theme(self, constructor):
         """Build trace without theme application - themes should be applied in plot builders.
@@ -170,24 +171,19 @@ class PlotFigure:
     def _build_basic_trace(self, constructor):
         """Build a basic trace from TraceConstructor without theme styling."""
         import plotly.graph_objects as go
-        from ..standard.properties import StandardTraceProperties
         from ..converters.plotly_converter import PlotlyPropertyConverter
 
         # Extract basic properties
         data = np.asarray(constructor.data)
 
         # Handle properties conversion
-        if isinstance(constructor.properties, StandardTraceProperties):
-            # Convert standard properties to Plotly format
+        if hasattr(constructor.properties, 'to_dict'):
+            # Convert properties object to Plotly format
             properties = PlotlyPropertyConverter.convert_properties(constructor.properties)
+        elif isinstance(constructor.properties, dict):
+            properties = constructor.properties.copy()
         else:
-            # Use raw properties dictionary - handle both dict and objects with to_dict()
-            if hasattr(constructor.properties, 'to_dict'):
-                properties = constructor.properties.to_dict()
-            elif isinstance(constructor.properties, dict):
-                properties = constructor.properties.copy()
-            else:
-                properties = {}
+            properties = {}
 
         # Determine if 2D or 3D based on data shape
         if data.ndim >= 2 and data.shape[-1] >= 3:
@@ -259,22 +255,29 @@ class PlotFigure:
 
     @property
     def traces(self, trace_constructor=None):
-        self.trace_constructor = (
-            self.trace_constructor if trace_constructor is None else trace_constructor
-        )
+        # Only build traces if not already built (lazy loading)
+        if not self._traces_built:
+            self.trace_constructor = (
+                self.trace_constructor if trace_constructor is None else trace_constructor
+            )
 
-        # Use TraceBuilder for proper theme resolution
-        from .trace import TraceBuilder
-        builder = TraceBuilder()
+            # Use TraceBuilder for proper theme resolution
+            from .trace import TraceBuilder
+            builder = TraceBuilder()
 
-        return {
-            key: builder.build_trace(constructor)
-            for key, constructor in self.trace_constructor.items()
-        }
+            self._built_traces = {
+                key: builder.build_trace(constructor)
+                for key, constructor in self.trace_constructor.items()
+            }
+            self._traces_built = True
+
+        return self._built_traces
 
     @traces.setter
     def traces(self, trace_constructor):
         self.trace_constructor = trace_constructor
+        # Reset lazy loading when traces are changed
+        self._traces_built = False
 
     @property
     def surfaces(self, surface_constructor=None):
@@ -439,31 +442,32 @@ class PlotFigure:
 
     @property
     def figure(self):
-        # Return existing figure if it exists, otherwise return normal figure
-        if self._figure:
-            return self._figure
-        else:
+        # Return existing figure if it exists, otherwise build it lazily
+        if self._figure is None:
             fig = go.Figure()
             fig.add_traces(list(self.traces.values()))
 
-        # Apply theme-specific layout
-        from ..themes.manager import get_theme_manager
+            # Apply theme-specific layout
+            from ..themes.manager import get_theme_manager
 
-        theme = get_theme_manager()
-        plotly_theme = theme.get_plotly_theme()
+            theme = get_theme_manager()
+            plotly_theme = theme.get_plotly_theme()
 
-        # Merge theme layout with existing layout, preserving specific axis settings
-        themed_layout = self.layout.copy()
-        if theme_layout := plotly_theme.get("layout"):
-            merge(themed_layout, theme_layout)
+            # Merge theme layout with existing layout, preserving specific axis settings
+            themed_layout = self.layout.copy()
+            if theme_layout := plotly_theme.get("layout"):
+                merge(themed_layout, theme_layout)
 
-        fig.update_layout(themed_layout)
-        self._figure = fig
-        return fig
+            fig.update_layout(themed_layout)
+            self._figure = fig
+
+        return self._figure
 
     @figure.setter
     def figure(self, fig):
         self._figure = fig
+        # Reset trace building when figure is manually set
+        self._traces_built = False
 
 
 class PlotFigure3D(PlotFigure):

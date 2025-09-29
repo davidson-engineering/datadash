@@ -345,12 +345,66 @@ class ThemeManager:
         themed_traces = {}
         total_traces = len(trace_names)
 
+        # Pre-generate all palette colors once for better performance
+        palette_colors = self.get_palette_colors(palette_level, total_traces)
+
         for i, trace_name in enumerate(trace_names):
-            themed_traces[trace_name] = self.get_themed_trace_properties(
-                trace_name, palette_level, i, total_traces
+            themed_traces[trace_name] = self._get_themed_properties_with_precomputed_color(
+                trace_name, palette_colors[i] if i < len(palette_colors) else palette_colors[0]
             )
 
         return themed_traces
+
+    def _get_themed_properties_with_precomputed_color(
+        self, trace_name: str, color: str
+    ) -> Dict[str, Any]:
+        """Get themed properties with a precomputed palette color.
+
+        This is an optimized version that skips palette color generation.
+
+        Args:
+            trace_name: Name/identifier of the trace for theme lookup
+            color: Precomputed palette color to use
+
+        Returns:
+            Dictionary of themed properties with the given color applied
+        """
+        # Get base trace theme (includes all three levels: default -> custom -> overrides)
+        base_theme = self.get_trace_theme(trace_name) or {}
+
+        # Only apply palette colors if no colors are explicitly defined in any theme level
+        needs_line_color = (
+            "line" not in base_theme
+            or "color" not in base_theme.get("line", {})
+            or base_theme.get("line", {}).get("color") is None
+        )
+
+        needs_marker_color = (
+            "marker" not in base_theme
+            or "color" not in base_theme.get("marker", {})
+            or base_theme.get("marker", {}).get("color") is None
+        )
+
+        if needs_line_color or needs_marker_color:
+            # Use the precomputed color
+            themed_properties = base_theme.copy()
+
+            # Apply color to line properties if needed
+            if needs_line_color:
+                if "line" not in themed_properties:
+                    themed_properties["line"] = {}
+                themed_properties["line"]["color"] = color
+
+            # Apply color to marker properties if needed
+            if needs_marker_color:
+                if "marker" not in themed_properties:
+                    themed_properties["marker"] = {}
+                themed_properties["marker"]["color"] = color
+                themed_properties["marker"]["line_color"] = color
+            return themed_properties
+
+        # Return base theme without palette colors if they're not needed or are already specified
+        return base_theme
 
     def list_available_palettes(self) -> Dict[str, str]:
         """Get the current palette assignments for this theme.

@@ -180,9 +180,10 @@ def create_job_selector_dropdown(job_options, current_job_id=None):
     dropdown_style = theme.get_component_style("dropdown") or {}
 
     return html.Div(
-        [
+        id="job-selector-container",
+        children=[
             dcc.Dropdown(
-                id="job-selector-dropdown",
+                id="job-selector",
                 options=job_options,
                 value=current_job_id,
                 # style=dropdown_style,

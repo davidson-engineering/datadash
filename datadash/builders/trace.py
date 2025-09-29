@@ -17,6 +17,16 @@ from ..themes.manager import get_theme_manager
 
 # from ..utils import repeat, tile
 
+# Cache theme manager instance to avoid repeated lookups
+_cached_theme_manager = None
+
+def get_cached_theme_manager():
+    """Get cached theme manager instance to improve performance."""
+    global _cached_theme_manager
+    if _cached_theme_manager is None:
+        _cached_theme_manager = get_theme_manager()
+    return _cached_theme_manager
+
 # from ..converters.plotly_converter import convert_standard_to_plotly
 
 # Legacy TraceConstructor class removed - use src.visu.builders.trace_constructor.TraceConstructor
@@ -86,11 +96,12 @@ class TraceConstructor:
 
     def __post_init__(self):
         """Post-initialization processing."""
-        # Ensure data is numpy array
-        self.data = np.asarray(self.data)
+        # Only convert to numpy array if not already one (performance optimization)
+        if not isinstance(self.data, np.ndarray):
+            self.data = np.asarray(self.data)
 
-        # Ensure time is numpy array if provided
-        if self.time is not None:
+        # Only convert time to numpy array if provided and not already one
+        if self.time is not None and not isinstance(self.time, np.ndarray):
             self.time = np.asarray(self.time)
 
         # Initialize properties if None
@@ -283,8 +294,11 @@ def create_trace_constructor(
         properties = properties.copy()
         properties["name"] = properties.pop("display_name")
 
-    # Convert to numpy array for consistent processing
-    data = np.asarray(data)
+    # Convert to numpy array for consistent processing (only if needed)
+    if not isinstance(data, np.ndarray):
+        data = np.asarray(data)
+    else:
+        data = data  # Already a numpy array, no conversion needed
 
     # Validation: static traces with time
     if static and time is not None:
@@ -418,8 +432,10 @@ class TraceBuilder:
         Args:
             theme_manager: Optional theme manager instance; defaults to global.
         """
-        self.theme_manager = theme_manager or get_theme_manager()
+        self.theme_manager = theme_manager or get_cached_theme_manager()
         self.logger = logging.getLogger(__name__)
+        # Add property cache for performance
+        self._property_cache = {}
 
     # ---------- Public API ----------
 
@@ -491,6 +507,11 @@ class TraceBuilder:
         Returns:
             Merged dictionary of properties ready for Plotly.
         """
+        # Check cache first for performance
+        cache_key = (constructor.name, str(sorted(constructor.properties.items()) if constructor.properties else ""))
+        if cache_key in self._property_cache:
+            return self._property_cache[cache_key].copy()
+
         # Convert constructor properties to dict
         constructor_props = constructor.properties
         if constructor_props is None:
@@ -504,14 +525,14 @@ class TraceBuilder:
                 break
         else:
             default_theme = self.theme_manager.get_trace_theme("default")
-            # if isinstance(default_theme, StandardTraceProperties):
-            #     default_theme = convert_standard_to_plotly(default_theme)
             props = merge({}, constructor_props, default_theme or {})
 
         # Inject human-readable name from constructor (trace identity)
         if constructor.name and constructor.name != "trace":
             props["name"] = constructor.name
 
+        # Cache the result
+        self._property_cache[cache_key] = props.copy()
         return props
 
     # ---------- Data Preparation ----------
