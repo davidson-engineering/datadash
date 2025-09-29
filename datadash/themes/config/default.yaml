@@ -97,7 +97,7 @@ styles:
     background: *color_secondary_bg
     margin: 0rem
     padding: 0rem 4rem 0.5rem
-    gap: 2rem
+    gap: 1.5rem
     justifyContent: center
     height: 60px
     flex-shrink: 0
@@ -167,7 +167,7 @@ styles:
     fontSize: 1rem
     minWidth: 200px
     display: "block"
-    padding: "0.5rem 10% 0rem"
+    padding: "1rem 8% 0rem"
     height: auto  # Let it size naturally
     flex-shrink: 0
 

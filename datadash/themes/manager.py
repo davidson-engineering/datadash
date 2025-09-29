@@ -12,6 +12,9 @@ import yaml
 # Import palette system
 from .palettes import get_palette_registry
 
+# Global cache for loaded YAML files to avoid repeated file I/O
+_yaml_file_cache = {}
+
 
 class ThemeManager:
     def __init__(
@@ -31,6 +34,7 @@ class ThemeManager:
 
         # Cache for expensive operations
         self._plotly_theme_cache = None
+        self._palette_color_cache = {}
 
     def _load_hierarchical_theme_config(
         self, theme_name: str, overrides_config: Dict[str, Any] = None
@@ -67,7 +71,13 @@ class ThemeManager:
         return merged_config
 
     def _load_theme_file(self, theme_name: str) -> Dict[str, Any]:
-        """Load a theme configuration file."""
+        """Load a theme configuration file with caching."""
+        global _yaml_file_cache
+
+        # Check cache first
+        if theme_name in _yaml_file_cache:
+            return _yaml_file_cache[theme_name]
+
         theme_file = Path(__file__).parent / "config" / f"{theme_name}.yaml"
         if not theme_file.exists():
             # Fallback to legacy location
@@ -77,10 +87,15 @@ class ThemeManager:
                     raise FileNotFoundError(
                         f"Default theme file not found: {theme_file}"
                     )
-                return {}  # Return empty config for missing non-default themes
+                # Cache empty result to avoid repeated file checks
+                _yaml_file_cache[theme_name] = {}
+                return {}
 
         with open(theme_file, "r") as f:
-            return yaml.safe_load(f) or {}
+            config = yaml.safe_load(f) or {}
+            # Cache the loaded configuration
+            _yaml_file_cache[theme_name] = config
+            return config
 
     def _apply_overrides(
         self, base_config: Dict[str, Any], overrides: Dict[str, Any]
@@ -241,7 +256,17 @@ class ThemeManager:
         return self.theme_config.get("dashboard_title", "Robot Simulator")
 
     def _load_palettes(self):
-        """Load color palettes from palettes.yaml"""
+        """Load color palettes from palettes.yaml with caching"""
+        global _yaml_file_cache
+
+        palette_key = "_palettes"
+        if palette_key in _yaml_file_cache:
+            # Use cached palette config
+            palette_config = _yaml_file_cache[palette_key]
+            if palette_config:
+                self.palette_registry.load_from_config(palette_config)
+            return
+
         palette_file = Path(__file__).parent / "config" / "palettes.yaml"
         if not palette_file.exists():
             # Fallback to legacy location
@@ -250,11 +275,16 @@ class ThemeManager:
         if palette_file.exists():
             with open(palette_file, "r") as f:
                 palette_config = yaml.safe_load(f)
+                # Cache the palette config
+                _yaml_file_cache[palette_key] = palette_config
                 if palette_config:
                     self.palette_registry.load_from_config(palette_config)
+        else:
+            # Cache empty result
+            _yaml_file_cache[palette_key] = None
 
     def get_palette_colors(self, palette_level: str, count: int) -> Tuple[str, ...]:
-        """Get colors for a specific palette level (primary, secondary, tertiary).
+        """Get colors for a specific palette level (primary, secondary, tertiary) with caching.
 
         Args:
             palette_level: 'primary', 'secondary', or 'tertiary'
@@ -263,15 +293,23 @@ class ThemeManager:
         Returns:
             Tuple of hex color strings
         """
+        # Check cache first
+        cache_key = (palette_level, count)
+        if cache_key in self._palette_color_cache:
+            return self._palette_color_cache[cache_key]
+
         # Get palette assignments from theme config
         palette_assignments = self.theme_config.get("palettes", {})
         palette_name = palette_assignments.get(palette_level)
 
         if palette_name is None:
             # Fallback to default behavior
-            return ("#007bff",) * count
+            colors = ("#007bff",) * count
+        else:
+            colors = self.palette_registry.generate_colors(palette_name, count)
 
-        colors = self.palette_registry.generate_colors(palette_name, count)
+        # Cache the result
+        self._palette_color_cache[cache_key] = colors
         return colors
 
     def get_themed_trace_properties(

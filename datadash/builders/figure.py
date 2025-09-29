@@ -463,10 +463,11 @@ class PlotFigure:
 
                 self._computed_layout = themed_layout
 
-            # Create figure with pre-computed layout to avoid update_layout() bottleneck
+            # Create figure with simplified layout to reduce deep copying overhead
+            simplified_layout = self._simplify_layout_for_plotly(self._computed_layout)
             fig = go.Figure(
                 data=list(self.traces.values()),
-                layout=go.Layout(**self._computed_layout)
+                layout=go.Layout(**simplified_layout)
             )
             self._figure = fig
 
@@ -490,11 +491,27 @@ class PlotFigure:
                 if key in ['xaxis', 'yaxis', 'scene', 'font']:
                     target[key].update(value)
                 else:
-                    # Simple replacement for other nested objects
+                    # Simple replacement for other nested objects to reduce deep copying
                     target[key] = value
             else:
                 # Simple assignment for top-level properties
                 target[key] = value
+
+    def _simplify_layout_for_plotly(self, layout):
+        """Reduce layout complexity while preserving all essential formatting."""
+        # Instead of aggressive filtering, just make shallow copies to reduce nesting depth
+        # that triggers excessive deep copying in Plotly
+        simplified = {}
+
+        for key, value in layout.items():
+            if isinstance(value, dict) and key in ['xaxis', 'yaxis', 'scene']:
+                # Make shallow copies of axis objects to reduce deep copying while preserving all properties
+                simplified[key] = value.copy()
+            else:
+                # Copy other properties as-is
+                simplified[key] = value
+
+        return simplified
 
 
 class PlotFigure3D(PlotFigure):
