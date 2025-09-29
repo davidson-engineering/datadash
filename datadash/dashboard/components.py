@@ -10,12 +10,12 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 from mergedeep import merge
 
+from ..themes.manager import get_theme_manager
+
 CURRENT_YEAR = datetime.datetime.now().year
 
 
 def construct_dash_table(table):
-
-    from ..themes.manager import get_theme_manager
 
     theme = get_theme_manager()
 
@@ -56,7 +56,6 @@ def construct_dash_table(table):
 
 
 def create_tabs(children, id="dashboard", value="actuator-dynamics", style=None):
-    from ..themes.manager import get_theme_manager
 
     theme = get_theme_manager()
 
@@ -74,7 +73,6 @@ def create_tabs(children, id="dashboard", value="actuator-dynamics", style=None)
 
 
 def create_graph_component(graph_id, figure, width="auto", style=None, config=None):
-    from ..themes.manager import get_theme_manager
 
     theme = get_theme_manager()
 
@@ -116,7 +114,6 @@ def create_tab_layout(children, style=None):
 
 
 def create_main_container(children=None, style=None):
-    from ..themes.manager import get_theme_manager
 
     theme = get_theme_manager()
 
@@ -132,7 +129,6 @@ def create_main_container(children=None, style=None):
 
 
 def create_dashboard_header(title="Robot Simulator"):
-    from ..themes.manager import get_theme_manager
 
     theme = get_theme_manager()
 
@@ -140,7 +136,6 @@ def create_dashboard_header(title="Robot Simulator"):
 
 
 def create_dashboard_footer(text=f"Davidson Engineering Ltd. © {CURRENT_YEAR}"):
-    from ..themes.manager import get_theme_manager
 
     theme = get_theme_manager()
 
@@ -148,7 +143,6 @@ def create_dashboard_footer(text=f"Davidson Engineering Ltd. © {CURRENT_YEAR}")
 
 
 def create_themed_tab(label, value):
-    from ..themes.manager import get_theme_manager
 
     theme = get_theme_manager()
 
@@ -164,11 +158,10 @@ def create_themed_tab(label, value):
 
 
 def create_body_container(children, style=None):
-    from ..themes.manager import get_theme_manager
 
     theme = get_theme_manager()
 
-    default_style = theme.get_component_style("body_container").copy()
+    default_style = theme.get_component_style("body_container")
     if style:
         default_style.update(style)
 
@@ -179,53 +172,22 @@ def create_body_container(children, style=None):
 
 
 def create_job_selector_dropdown(job_options, current_job_id=None):
-    from ..themes.manager import get_theme_manager
 
     theme = get_theme_manager()
 
-    icon = theme.get_tab_icon("job-selector") or "󰮔"
-
-    dropdown_style = {
-        "backgroundColor": theme.config.get("colors", {}).get(
-            "secondary_bg", "#f8f9fa"
-        ),
-        "color": theme.config.get("colors", {}).get("text_primary", "#212529"),
-        "border": f"1px solid {theme.config.get('colors', {}).get('border', '#dee2e6')}",
-        "borderRadius": "8px",
-        "fontFamily": theme.config.get("fonts", {}).get("primary", "system-ui"),
-        "fontSize": "0.9rem",
-        "minWidth": "200px",
-    }
+    # icon = theme.get_tab_icon("job-selector") or "󰮔"
+    dropdown_container_style = theme.get_component_style("dropdown-container")
+    dropdown_style = theme.get_component_style("dropdown") or {}
 
     return html.Div(
         [
-            html.Label(
-                f"{icon}  Job Selection:",
-                style={
-                    "color": theme.config.get("colors", {}).get(
-                        "text_secondary", "#6c757d"
-                    ),
-                    "fontFamily": theme.config.get("fonts", {}).get(
-                        "primary", "system-ui"
-                    ),
-                    "fontSize": "0.85rem",
-                    "marginBottom": "0.5rem",
-                    "display": "block",
-                },
-            ),
             dcc.Dropdown(
-                id="job-selector",
+                id="job-selector-dropdown",
                 options=job_options,
                 value=current_job_id,
-                style=dropdown_style,
+                # style=dropdown_style,
                 clearable=False,
             ),
         ],
-        style={
-            "margin": "1rem",
-            "padding": "1rem",
-            "background": theme.config.get("colors", {}).get("accent_bg", "#f8f9fa"),
-            "borderRadius": "8px",
-            "border": f"1px solid {theme.config.get('colors', {}).get('border', '#dee2e6')}",
-        },
+        style=dropdown_container_style,
     )

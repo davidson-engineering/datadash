@@ -16,7 +16,6 @@ from mergedeep import merge
 from ..themes.manager import get_theme_manager
 
 # from ..utils import repeat, tile
-from ..standard.properties import StandardTraceProperties
 
 # from ..converters.plotly_converter import convert_standard_to_plotly
 
@@ -142,7 +141,7 @@ class TraceConstructor:
         # Handle properties conversion
         properties_dict = {}
         if self.properties:
-            if isinstance(self.properties, StandardTraceProperties):
+            if hasattr(self.properties, 'to_dict'):
                 properties_dict = self.properties.to_dict()
             else:
                 properties_dict = self.properties.copy()
@@ -238,7 +237,7 @@ def create_trace_constructor(
     time: Optional[npt.ArrayLike] = None,
     closed: bool = False,
     static: bool = False,
-    properties: Optional[Union[Dict[str, Any], StandardTraceProperties]] = None,
+    properties: Optional[Dict[str, Any]] = None,
     **kwargs,
 ) -> TraceConstructor:
     """Convenience function to create a TraceConstructor.
@@ -260,7 +259,7 @@ def create_trace_constructor(
         time: Time data for animated traces
         closed: Whether trace should be closed
         static: Whether this is a static trace
-        properties: Trace properties (StandardTraceProperties or dict)
+        properties: Trace properties dict
         **kwargs: Additional properties merged with properties
 
     Returns:
@@ -275,10 +274,9 @@ def create_trace_constructor(
     elif isinstance(properties, dict) and kwargs:
         # Merge properties dict with kwargs
         properties = {**properties, **kwargs}
-    elif isinstance(properties, StandardTraceProperties) and kwargs:
-        # Convert StandardTraceProperties to dict and merge with kwargs
+    elif hasattr(properties, 'to_dict') and kwargs:
+        # Convert properties object to dict and merge with kwargs
         properties = {**properties.to_dict(), **kwargs}
-    # If properties is StandardTraceProperties and no kwargs, use as-is
 
     # Handle display_name -> name conversion at source
     if isinstance(properties, dict) and "display_name" in properties:
@@ -493,11 +491,8 @@ class TraceBuilder:
         Returns:
             Merged dictionary of properties ready for Plotly.
         """
-        # Convert constructor properties to dict if it's StandardTraceProperties
+        # Convert constructor properties to dict
         constructor_props = constructor.properties
-        # if isinstance(constructor_props, StandardTraceProperties):
-        #     constructor_props = convert_standard_to_plotly(constructor_props)
-        # elif constructor_props is None:
         if constructor_props is None:
             constructor_props = {}
 
@@ -505,9 +500,6 @@ class TraceBuilder:
         for key in constructor.get_hierarchical_lookup_keys():
             theme = self.theme_manager.get_trace_theme(key)
             if theme:
-                # Convert theme properties if they're StandardTraceProperties
-                # if isinstance(theme, StandardTraceProperties):
-                #     theme = convert_standard_to_plotly(theme)
                 props = merge({}, constructor_props, theme)
                 break
         else:

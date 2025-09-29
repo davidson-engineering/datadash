@@ -184,7 +184,7 @@ class ThemeManager:
         return self.icons.get("tabs", {}).get(tab_value, "")
 
     def get_component_style(self, component: str) -> Dict[str, Any]:
-        return self.styles.get(component, {})
+        return self.styles.get(component, {}).copy()
 
     def get_plotly_theme(self) -> Dict[str, Any]:
         """Get Plotly-specific theme configuration with auto-generated numbered axes"""

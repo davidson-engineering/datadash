@@ -159,6 +159,21 @@ styles:
     flex-shrink: 0
     # box-shadow: *footer-shadow
 
+  dropdown-container:
+    color: *color_text_primary
+    fontFamily: *body_font
+    fontSize: 1rem
+    minWidth: 200px
+    display: "block"
+
+  dropdown:
+    background: *color_secondary_bg
+    border: *border_style
+    padding: "1rem 10rem 1rem 10rem"
+    borderRadius: 8px
+    width: "100%"
+    fontFamily: *body_font
+
 plotly:
   layout:
     paper_bgcolor: "#ffffff"
