@@ -16,8 +16,13 @@ colors:
   border: &color_border "#dee2e6"
   accent: &color_accent "#343538"
 
-styles:
-  border: &border_style "1.5px solid #dee2e6"
+global-styles:
+  border:
+    bars: &border_style "1.25px solid #dee2e6"
+  # box_shadow:
+    # upper: &upper-shadow "0px 6px 10px 0px #000000 inset"
+    # main: &main-shadow "0px -4px 6px 0px rgba(0, 0, 0, 0.1) inset, 0px 4px 6px 0px rgba(0, 0, 0, 0.1) inset"
+    # footer: &footer-shadow "0px -6px 10px 0px #000000 inset"
 
 fonts:
   monospace: &monospace_font "'DroidSansMonoNerdFontMono, 'monospace'"
@@ -67,8 +72,8 @@ styles:
     fontWeight: 600
     fontSize: 1.1em
     display: "flex"
-    alignItems: "center"
-    justifyContent: "center"
+    alignItems: center
+    justifyContent: center
     lineHeight: 1.25
     maxWidth: 70%
     
@@ -85,9 +90,7 @@ styles:
     alignItems: "center"
     justifyContent: "center"
     lineHeight: 1.25
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.1)
     background: *color_accent 
-    # background: 'linear-gradient(#4a90e2, #357ab8)'
     
   tab_container:
     background: *color_secondary_bg
@@ -95,7 +98,6 @@ styles:
     padding: 0rem 4rem 0.5rem
     gap: 2rem
     justifyContent: center
-    boxShadow: "0 2px 2px rgba(0,0,0,0.1)"
     height: 80px
     flex-shrink: 0
     border-bottom: *border_style
@@ -110,25 +112,24 @@ styles:
     flexDirection: column
     min-height: 100vh
     overflow: hidden  # prevent outer scroll
-    # position: relative
     
   main_container:
     background: *color_primary_bg
     flex: 1 1 auto
     padding: 0rem
-    margin-bottom: 60px
     overflow-x: hidden
     overflow-y: auto
-    
-    
+
   graph_container:
     background: *color_primary_bg
+    margin-top: 5px
     flex: 1 1 auto
     overflow-y: auto
     gap: 0rem
     width: 100%
-    max-width: 1200px
-    min-width: 600px
+    height: 100%
+    # max-width: 1200px
+    # min-width: 600px
 
   table_container:
     background: *color_primary_bg
@@ -138,7 +139,6 @@ styles:
     width: 100%;
     max-width: 1200px;
     min-width: 600px;
-
     
   footer:
     # position: fixed;
@@ -157,6 +157,7 @@ styles:
     z-index: 9999
     lineHeight: 1.25
     flex-shrink: 0
+    # box-shadow: *footer-shadow
 
 plotly:
   layout:
@@ -166,13 +167,13 @@ plotly:
       family: *plots_font
       size: 16
       color: *color_text_primary
-    colorway: ["#007bff", "#28a745", "#dc3545", "#ffc107", "#17a2b8", "#6f42c1", "#e83e8c", "#fd7e14"]
     autosize: True
     title:
       y: 0.9
       x: 0.5
       xanchor: center
       yanchor: top
+    # colorway: ["#007bff", "#28a745", "#dc3545", "#ffc107", "#17a2b8", "#6f42c1", "#e83e8c", "#fd7e14"]
     # margin: {l: 60, r: 60, t: 60, b: 60}
     xaxis:
       gridcolor: "#dee2e6"
