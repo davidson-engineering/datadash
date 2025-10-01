@@ -4,6 +4,7 @@
 # Davidson Engineering Ltd. © 2023
 
 import logging
+import warnings
 from dataclasses import dataclass
 import plotly.graph_objects as go
 from typing import Optional, Tuple, Union
@@ -20,12 +21,14 @@ from ..themes.manager import get_theme_manager
 # Cache theme manager instance to avoid repeated lookups
 _cached_theme_manager = None
 
+
 def get_cached_theme_manager():
     """Get cached theme manager instance to improve performance."""
     global _cached_theme_manager
     if _cached_theme_manager is None:
         _cached_theme_manager = get_theme_manager()
     return _cached_theme_manager
+
 
 # from ..converters.plotly_converter import convert_standard_to_plotly
 
@@ -152,7 +155,7 @@ class TraceConstructor:
         # Handle properties conversion
         properties_dict = {}
         if self.properties:
-            if hasattr(self.properties, 'to_dict'):
+            if hasattr(self.properties, "to_dict"):
                 properties_dict = self.properties.to_dict()
             else:
                 properties_dict = self.properties.copy()
@@ -276,8 +279,6 @@ def create_trace_constructor(
     Returns:
         TraceConstructor: New trace constructor instance
     """
-    import logging
-    import warnings
 
     # Handle properties parameter and kwargs
     if properties is None:
@@ -285,7 +286,7 @@ def create_trace_constructor(
     elif isinstance(properties, dict) and kwargs:
         # Merge properties dict with kwargs
         properties = {**properties, **kwargs}
-    elif hasattr(properties, 'to_dict') and kwargs:
+    elif hasattr(properties, "to_dict") and kwargs:
         # Convert properties object to dict and merge with kwargs
         properties = {**properties.to_dict(), **kwargs}
 
@@ -508,7 +509,12 @@ class TraceBuilder:
             Merged dictionary of properties ready for Plotly.
         """
         # Check cache first for performance
-        cache_key = (constructor.name, str(sorted(constructor.properties.items()) if constructor.properties else ""))
+        cache_key = (
+            constructor.name,
+            str(
+                sorted(constructor.properties.items()) if constructor.properties else ""
+            ),
+        )
         if cache_key in self._property_cache:
             return self._property_cache[cache_key].copy()
 
