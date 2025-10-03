@@ -686,6 +686,10 @@ class TraceBuilder:
         Returns:
             go.Scatter or go.Scatter3d
         """
+        invalid_props = {"line_shape"}
         if z is None:
             return go.Scatter(x=x, y=y, **props)
+        else:
+            for prop in invalid_props:  # line_shape not valid for 3D
+                props.pop(prop, None)
         return go.Scatter3d(x=x, y=y, z=z, **props)

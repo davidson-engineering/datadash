@@ -257,6 +257,7 @@ plotly:
         size: 8
       line: 
         width: 3
+      line_shape: spline
       mode: lines+markers
       visible: true
       hovertemplate: "%{y:.3f}"
@@ -293,7 +294,10 @@ plotly:
           width: 2
         size: 6
         symbol: x-thin
-      mode: markers
+      line:
+        width: 1
+      line_shape: spline
+      mode: markers+lines
       hovertemplate: "%{y:.2f}"
 
     # Robot-specific trace properties
