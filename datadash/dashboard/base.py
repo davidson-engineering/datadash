@@ -27,8 +27,15 @@ class DashboardApp(ABC):
             self.plots = job_batch[self.current_job_id]["plots"]
             self.tables = job_batch[self.current_job_id]["tables"]
 
-    def run(self):
-        self.app.run(debug=False)
+    def run(self, debug=False, port=8050, host='127.0.0.1'):
+        """Run the dashboard server.
+
+        Args:
+            debug: Enable debug mode
+            port: Port to run on (default: 8050)
+            host: Host to bind to (default: 127.0.0.1)
+        """
+        self.app.run(debug=debug, port=port, host=host)
         return self
 
     @abstractmethod
