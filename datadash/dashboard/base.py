@@ -13,19 +13,6 @@ assets_path = Path("../assets/")
 
 
 class DashboardApp(ABC):
-    def __init__(self, plots, tables: dict, job_batch=None):
-        if job_batch is None:
-            # Single job mode - current behavior
-            self.plots = plots
-            self.tables = tables
-            self.job_batch = None
-            self.current_job_id = None
-        else:
-            # Multi-job mode - new behavior
-            self.job_batch = job_batch
-            self.current_job_id = next(iter(job_batch.keys()))  # Default to first job
-            self.plots = job_batch[self.current_job_id]["plot_data"]
-            self.tables = job_batch[self.current_job_id]["tables"]
 
     def run(self, debug=False, port=8050, host="127.0.0.1"):
         """Run the dashboard server.
