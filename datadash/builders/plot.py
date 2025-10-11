@@ -23,6 +23,8 @@ from plotly.colors import sample_colorscale
 
 import numpy as np
 
+FigureCacheManager().clear_all()  # Clear all cached figures on module load (for development)
+
 
 def create_combined_traces(
     x: Union[np.ndarray, list],
@@ -420,8 +422,6 @@ class BasePlotBuilder:
     def __init__(self):
         self.layout_builder = PlotLayoutBuilder
         self.cache_manager = FigureCacheManager()
-        # Clear all cached figures on initialization (for development)
-        self.cache_manager.clear_all()
 
     def create_plot(
         self,
@@ -470,7 +470,13 @@ class BasePlotBuilder:
             cached_fig = self.cache_manager.get(plot_id)
             if cached_fig is not None:
                 # Update the cached figure with new data
-                fig = self._update_cached_figure(cached_fig, x, y, headers)
+                fig = self._update_cached_figure(
+                    cached_fig=cached_fig,
+                    x=x,
+                    y=y,
+                    headers=headers,
+                    secondary_axis=secondary_axis,
+                )
                 return fig
 
         # Cache miss or caching disabled - build figure from scratch
@@ -506,7 +512,6 @@ class BasePlotBuilder:
         if secondary_axis:
             figure_instance.add_secondary_axis(**secondary_axis)
 
-        # fig = figure_instance.create_figure()
         fig = figure_instance.figure
 
         # Cache the figure if plot_id is provided
@@ -515,7 +520,7 @@ class BasePlotBuilder:
 
         return fig
 
-    def _update_cached_figure(self, cached_fig, x, y, headers):
+    def _update_cached_figure(self, cached_fig, x, y, headers, secondary_axis=None):
         """Update a cached figure with new x/y data.
 
         This method assumes the data structure (number of traces, headers) remains
@@ -568,7 +573,9 @@ class BasePlotBuilder:
         else:
             raise ValueError(f"Unsupported y data shape: {y.shape}")
 
-        self._update_trace_margin(cached_fig.layout, x, y)
+        self._update_trace_margin(
+            cached_fig.layout, x, y, secondary_axis=secondary_axis
+        )
 
         return cached_fig
 
@@ -700,10 +707,22 @@ class BasePlotBuilder:
         return theme_manager.get_palette_colors(self.palette, count)
 
     @classmethod
-    def _update_trace_margin(cls, layout, x=None, y=None):
+    def _update_trace_margin(cls, layout, x=None, y=None, secondary_axis=None):
         """Get trace margin from theme manager"""
         # Scale axis limits based on ratio of data range old to new
-        # TODO
+        theme = get_theme_manager()
+        margin = theme.get_settings().get("trace_margin", 0)
+        _x_range, _y_range = get_plot_range([x, y], margins=[0, margin])
+        if _x_range is not None:
+            layout.xaxis.range = _x_range
+        if _y_range is not None:
+            layout.yaxis.range = _y_range
+        if secondary_axis and hasattr(layout, "yaxis2"):
+            if _y_range is not None:
+                layout.yaxis2.range = tuple(
+                    el * secondary_axis.get("scale", 1) for el in _y_range
+                )
+
         return None
 
 
