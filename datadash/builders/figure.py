@@ -156,114 +156,19 @@ class PlotFigure:
         self._traces_built = False  # Track if traces have been built
         self._computed_layout = None  # Cache computed layout
 
-    def _build_trace_without_theme(self, constructor):
-        """Build trace without theme application - themes should be applied in plot builders.
-
-        Converts legacy dict constructors to TraceConstructor objects and builds
-        basic traces without theme styling.
-        """
-        if not isinstance(constructor, TraceConstructor):
-            # Convert legacy dict constructor to new TraceConstructor
-            constructor = self._convert_legacy_constructor(constructor)
-
-        # Build basic trace without theme application
-        return self._build_basic_trace(constructor)
-
-    def _build_basic_trace(self, constructor):
-        """Build a basic trace from TraceConstructor without theme styling."""
-        import plotly.graph_objects as go
-        from ..converters.plotly_converter import PlotlyPropertyConverter
-
-        # Extract basic properties
-        data = np.asarray(constructor.data)
-
-        # Handle properties conversion
-        if hasattr(constructor.properties, 'to_dict'):
-            # Convert properties object to Plotly format
-            properties = PlotlyPropertyConverter.convert_properties(constructor.properties)
-        elif isinstance(constructor.properties, dict):
-            properties = constructor.properties.copy()
-        else:
-            properties = {}
-
-        # Determine if 2D or 3D based on data shape
-        if data.ndim >= 2 and data.shape[-1] >= 3:
-            # 3D trace
-            if data.ndim == 1:
-                x, y, z = data[0], data[1], data[2]
-            elif data.ndim == 2:
-                x, y, z = data[:, 0], data[:, 1], data[:, 2]
-            else:
-                # Flatten for multi-segment
-                flat = data.reshape(-1, data.shape[-1])
-                x, y, z = flat[:, 0], flat[:, 1], flat[:, 2]
-
-            return go.Scatter3d(x=x, y=y, z=z, **properties)
-        else:
-            # 2D trace
-            if data.ndim == 1:
-                x, y = data[0], data[1]
-            elif data.ndim == 2:
-                x, y = data[:, 0], data[:, 1]
-            else:
-                # Flatten for multi-segment
-                flat = data.reshape(-1, data.shape[-1])
-                x, y = flat[:, 0], flat[:, 1]
-
-            return go.Scatter(x=x, y=y, **properties)
-
-    def _convert_legacy_constructor(self, legacy_dict):
-        """Convert legacy dict-based constructor to TraceConstructor.
-
-        Args:
-            legacy_dict: Legacy dict with keys like 'data', 'properties', etc.
-
-        Returns:
-            TraceConstructor: New TraceConstructor instance
-        """
-        # Extract common fields from legacy dict
-        name = legacy_dict.get("name", "trace")
-        data = legacy_dict.get("data", [])
-        time = legacy_dict.get("time", None)
-        closed = legacy_dict.get("closed", False)
-        static = legacy_dict.get("static", time is None)
-        properties = legacy_dict.get("properties", {})
-
-        # Capture hovertemplate from top-level dict and add to properties
-        if "hovertemplate" in legacy_dict:
-            properties = properties.copy()  # Don't modify original
-            properties["hovertemplate"] = legacy_dict["hovertemplate"]
-
-        # Handle alternative field names
-        if (not hasattr(data, "__len__") or len(data) == 0) and "x" in legacy_dict:
-            # Convert x, y, z to data format
-            x = legacy_dict.get("x", [])
-            y = legacy_dict.get("y", [])
-            z = legacy_dict.get("z", [])
-            if len(z) > 0:
-                data = np.column_stack((x, y, z))
-            else:
-                data = np.column_stack((x, y))
-
-        return TraceConstructor(
-            name=name,
-            data=data,
-            time=time,
-            closed=closed,
-            static=static,
-            properties=properties,
-        )
-
     @property
     def traces(self, trace_constructor=None):
         # Only build traces if not already built (lazy loading)
         if not self._traces_built:
             self.trace_constructor = (
-                self.trace_constructor if trace_constructor is None else trace_constructor
+                self.trace_constructor
+                if trace_constructor is None
+                else trace_constructor
             )
 
             # Use TraceBuilder for proper theme resolution
             from .trace import TraceBuilder
+
             builder = TraceBuilder()
 
             self._built_traces = {
@@ -292,6 +197,7 @@ class PlotFigure:
 
         # Use TraceBuilder for proper theme resolution
         from .trace import TraceBuilder
+
         builder = TraceBuilder()
 
         return {
@@ -466,8 +372,7 @@ class PlotFigure:
             # Create figure with simplified layout to reduce deep copying overhead
             simplified_layout = self._simplify_layout_for_plotly(self._computed_layout)
             fig = go.Figure(
-                data=list(self.traces.values()),
-                layout=go.Layout(**simplified_layout)
+                data=list(self.traces.values()), layout=go.Layout(**simplified_layout)
             )
             self._figure = fig
 
@@ -486,9 +391,13 @@ class PlotFigure:
         for nested properties to reduce the complexity that Plotly needs to process.
         """
         for key, value in source.items():
-            if key in target and isinstance(target[key], dict) and isinstance(value, dict):
+            if (
+                key in target
+                and isinstance(target[key], dict)
+                and isinstance(value, dict)
+            ):
                 # Only deep merge for specific nested objects
-                if key in ['xaxis', 'yaxis', 'scene', 'font']:
+                if key in ["xaxis", "yaxis", "scene", "font"]:
                     target[key].update(value)
                 else:
                     # Simple replacement for other nested objects to reduce deep copying
@@ -504,7 +413,7 @@ class PlotFigure:
         simplified = {}
 
         for key, value in layout.items():
-            if isinstance(value, dict) and key in ['xaxis', 'yaxis', 'scene']:
+            if isinstance(value, dict) and key in ["xaxis", "yaxis", "scene"]:
                 # Make shallow copies of axis objects to reduce deep copying while preserving all properties
                 simplified[key] = value.copy()
             else:
@@ -671,6 +580,7 @@ class SubplotsFigure(PlotFigure):
     def traces(self):
         # Use TraceBuilder for proper theme resolution
         from .trace import TraceBuilder
+
         builder = TraceBuilder()
 
         traces_data = []
@@ -682,7 +592,7 @@ class SubplotsFigure(PlotFigure):
                 constructor = data
 
             # Check if layout has showlegend=False and apply to individual traces
-            if hasattr(constructor.properties, 'copy'):
+            if hasattr(constructor.properties, "copy"):
                 merged_properties = constructor.properties.copy()
             elif isinstance(constructor.properties, dict):
                 merged_properties = constructor.properties.copy()
@@ -1021,13 +931,14 @@ class CombinedAxisFigure(PlotFigure):
     def traces(self):
         # Use TraceBuilder for proper theme resolution
         from .trace import TraceBuilder
+
         builder = TraceBuilder()
 
         traces = {}
         for key, constructor in self.trace_constructor.items():
-            # Convert to TraceConstructor if needed
-            if not isinstance(constructor, TraceConstructor):
-                constructor = self._convert_legacy_constructor(constructor)
+            # # Convert to TraceConstructor if needed
+            # if not isinstance(constructor, TraceConstructor):
+            #     constructor = self._convert_legacy_constructor(constructor)
 
             # Build trace with theme application
             traces[key] = builder.build_trace(constructor)

@@ -229,15 +229,15 @@ def create_flex_builder(flex_sections=None, **kwargs):
 
 def create_split_window_builder(**kwargs):
     """
-    Factory for split window layout: large plot on left, 2x2 grid on right
+    Factory for split window layout.
 
     Args:
-        main_width: Width of the main (left) plot column (default: 8)
-        grid_width: Width of the grid (right) column (default: 4)
+        left_width: Width of the main (left) plot column (default: 8)
+        right_width: Width of the grid (right) column (default: 4)
         **kwargs: Additional customization options
     """
-    main_width = kwargs.get("main_width", 8)
-    grid_width = kwargs.get("grid_width", 4)
+    left_width = kwargs.get("left_width", 8)
+    right_width = kwargs.get("right_width", 4)
 
     # Properties for the main split row (large plot + grid column)
     default_row_props = {
@@ -249,9 +249,9 @@ def create_split_window_builder(**kwargs):
     }
 
     # Column properties for the main split
-    main_column_props = [
-        {"width": main_width},  # Large plot column
-        {"width": grid_width},  # Grid column
+    column_properties = [
+        {"width": left_width},  # Large plot column
+        {"width": right_width},  # Grid column
     ]
 
     row_properties = merge_properties(
@@ -260,7 +260,7 @@ def create_split_window_builder(**kwargs):
 
     return ContentBuilder(
         row_properties=row_properties,
-        column_properties=main_column_props,
+        column_properties=column_properties,
     )
 
 

@@ -3,7 +3,16 @@
 # 2023/01/23
 # Davidson Engineering Ltd. © 2023
 
+"""Trace construction utilities for building Plotly traces with theme support.
+
+Environment Variables:
+    DATADASH_USE_WEBGL: Enable WebGL-accelerated rendering for 2D plots (default: false)
+                        Set to 'true', '1', or 'yes' to use go.Scattergl instead of go.Scatter
+                        Note: Scattergl has limitations (no spline line shapes, etc.)
+"""
+
 import logging
+import os
 import warnings
 from dataclasses import dataclass
 import plotly.graph_objects as go
@@ -673,9 +682,9 @@ class TraceBuilder:
         y: np.ndarray,
         z: Optional[np.ndarray],
         props: Dict[str, Any],
-    ) -> Union[go.Scatter, go.Scatter3d]:
+    ) -> Union[go.Scatter, go.Scatter3d, go.Scattergl]:
         """
-        Create a Plotly Scatter or Scatter3d trace.
+        Create a Plotly Scatter, Scattergl, or Scatter3d trace.
 
         Args:
             x: X coordinates (1D array)
@@ -684,12 +693,29 @@ class TraceBuilder:
             props: Dictionary of Plotly properties
 
         Returns:
-            go.Scatter or go.Scatter3d
+            go.Scatter, go.Scattergl, or go.Scatter3d
         """
-        invalid_props = {"line_shape"}
-        if z is None:
-            return go.Scatter(x=x, y=y, **props)
-        else:
-            for prop in invalid_props:  # line_shape not valid for 3D
+        # Check environment variable for WebGL acceleration (default: False)
+        use_webgl = os.environ.get('DATADASH_USE_WEBGL', 'false').lower() in ('true', '1', 'yes')
+
+        # Properties invalid for certain trace types
+        invalid_props_3d = {"line_shape"}
+        invalid_props_gl = {"line_shape"}  # Scattergl doesn't support 'spline'
+
+        def _filter_invalid_props(props, invalid_set):
+            props = props.copy()  # Don't modify original
+            for prop in invalid_set:
                 props.pop(prop, None)
-        return go.Scatter3d(x=x, y=y, z=z, **props)
+            return props
+
+        if z is None:
+            # 2D trace
+            if use_webgl:
+                # Scattergl: filter out invalid props like line_shape
+                return go.Scattergl(x=x, y=y, **_filter_invalid_props(props, invalid_props_gl))
+            else:
+                # Regular Scatter: supports all props
+                return go.Scatter(x=x, y=y, **props)
+        else:
+            # 3D trace
+            return go.Scatter3d(x=x, y=y, z=z, **_filter_invalid_props(props, invalid_props_3d))

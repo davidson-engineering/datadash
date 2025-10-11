@@ -97,37 +97,6 @@ def create_combined_traces(
     return traces
 
 
-# def create_combined_traces(x, y, headers="xyz", hover_template=None):
-#     """
-#     Create multiple traces from multi-dimensional data.
-
-#     Replacement for the old combined_trace_constructor function.
-#     """
-#     import numpy as np
-
-#     trace_dict = {}
-#     x = np.asarray(x)
-#     y = np.asarray(y)
-#     if len(x.shape) == 1:
-#         # tile x to y.shape
-#         x = np.tile(x, y.shape[1])
-#     for key, x_data, y_data in zip(headers, x.T, y.T):
-#         trace = create_trace_constructor(name=key, data=np.column_stack([x_data, y_data]), static=True)
-#         if hover_template:
-#             # Add hover template to the trace properties
-#             # Ensure properties is a dict
-#             if hasattr(trace.properties, "to_dict"):
-#                 props_dict = trace.properties.to_dict()
-#                 props_dict["hovertemplate"] = hover_template
-#                 trace.properties = props_dict
-#             elif isinstance(trace.properties, dict):
-#                 trace.properties["hovertemplate"] = hover_template
-#             else:
-#                 trace.properties = {"hovertemplate": hover_template}
-#         trace_dict[key] = trace
-#     return trace_dict
-
-
 def create_subplots_traces(
     x, y, rows=None, cols=None, hover_template=None, headers="xyz"
 ):
@@ -451,6 +420,8 @@ class BasePlotBuilder:
     def __init__(self):
         self.layout_builder = PlotLayoutBuilder
         self.cache_manager = FigureCacheManager()
+        # Clear all cached figures on initialization (for development)
+        self.cache_manager.clear_all()
 
     def create_plot(
         self,
@@ -535,6 +506,7 @@ class BasePlotBuilder:
         if secondary_axis:
             figure_instance.add_secondary_axis(**secondary_axis)
 
+        # fig = figure_instance.create_figure()
         fig = figure_instance.figure
 
         # Cache the figure if plot_id is provided
