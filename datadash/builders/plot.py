@@ -5,11 +5,17 @@
 
 import logging
 from typing import Union
+from .figure_cache import FigureCacheManager
 import numpy as np
 from mergedeep import merge, Strategy
 
 # Import core utilities
-from .trace import get_plot_range, TraceBuilder, TraceConstructor, create_trace_constructor
+from .trace import (
+    get_plot_range,
+    TraceBuilder,
+    TraceConstructor,
+    create_trace_constructor,
+)
 from .figure import PlotFigure, PlotFigure3D, CombinedAxisFigure, SubplotsFigure
 from ..themes.manager import get_theme_manager
 from .layout import PlotLayoutBuilder
@@ -51,7 +57,9 @@ def create_combined_traces(
 
     n_cols = y.shape[1]
     # Set default headers if None - use string names for TraceConstructor
-    headers = [f"trace_{i}" for i in range(n_cols)] if headers is None else list(headers)
+    headers = (
+        [f"trace_{i}" for i in range(n_cols)] if headers is None else list(headers)
+    )
 
     # Validate headers length
     if len(headers) != n_cols:
@@ -70,9 +78,7 @@ def create_combined_traces(
     # Create traces efficiently using list comprehension
     traces = {
         key: create_trace_constructor(
-            name=key,
-            data=np.column_stack([x[:, i], y[:, i]]),
-            static=True
+            name=key, data=np.column_stack([x[:, i], y[:, i]]), static=True
         )
         for i, key in enumerate(headers)
     }
@@ -140,9 +146,7 @@ def create_subplots_traces(
     data = []
     for axis, header in zip(np.asarray(y).T, headers):
         trace = create_trace_constructor(
-            name=header,
-            data=np.column_stack([x, axis]),
-            static=True
+            name=header, data=np.column_stack([x, axis]), static=True
         )
         if hover_template:
             trace.properties["hovertemplate"] = hover_template
@@ -316,7 +320,7 @@ class Spatial2DPlotBuilder(SpatialPlotBuilder):
                 name=trace_name,
                 data=np.column_stack([x_data, y_data]),
                 static=True,
-                properties=trace_properties
+                properties=trace_properties,
             )
         }
 
@@ -366,7 +370,7 @@ class Spatial3DPlotBuilder(SpatialPlotBuilder):
                 name=trace_name,
                 data=np.column_stack([x_data, y_data, z_data]),
                 static=True,
-                properties=trace_properties
+                properties=trace_properties,
             )
         }
 
@@ -446,6 +450,7 @@ class BasePlotBuilder:
 
     def __init__(self):
         self.layout_builder = PlotLayoutBuilder
+        self.cache_manager = FigureCacheManager()
 
     def create_plot(
         self,
@@ -461,10 +466,43 @@ class BasePlotBuilder:
         headers="xyz",
         hovermode="x unified",
         palette: str = "primary",
+        plot_id: str = None,
+        use_cache: bool = True,
         **kwargs,
     ):
-        """Create a complete plot by coordinating all components"""
+        """Create a complete plot by coordinating all components.
+
+        Args:
+            x: X-axis data
+            y: Y-axis data
+            title: Plot title
+            x_title: X-axis label
+            y_title: Y-axis label
+            x_units: X-axis units
+            y_units: Y-axis units
+            secondary_axis: Secondary axis configuration (optional)
+            hover_precision: Hover text precision
+            headers: Trace headers/names
+            hovermode: Hover mode setting
+            palette: Color palette to use
+            plot_id: Unique plot identifier for caching (required for cache to work)
+            use_cache: Whether to use Redis cache (default: True)
+            **kwargs: Additional arguments
+
+        Returns:
+            Plotly Figure object
+        """
         self.palette = palette
+
+        # Try to restore from cache if plot_id is provided
+        if use_cache and plot_id and self.cache_manager:
+            cached_fig = self.cache_manager.get(plot_id)
+            if cached_fig is not None:
+                # Update the cached figure with new data
+                fig = self._update_cached_figure(cached_fig, x, y, headers)
+                return fig
+
+        # Cache miss or caching disabled - build figure from scratch
         # Get the appropriate trace constructor and figure class
         traces = self._create_traces(
             x,
@@ -496,7 +534,71 @@ class BasePlotBuilder:
         )
         if secondary_axis:
             figure_instance.add_secondary_axis(**secondary_axis)
-        return figure_instance.figure
+
+        fig = figure_instance.figure
+
+        # Cache the figure if plot_id is provided
+        if use_cache and plot_id and self.cache_manager and self.cache_manager.enabled:
+            self.cache_manager.set(plot_id, fig)
+
+        return fig
+
+    def _update_cached_figure(self, cached_fig, x, y, headers):
+        """Update a cached figure with new x/y data.
+
+        This method assumes the data structure (number of traces, headers) remains
+        constant between updates. Only x/y data arrays are updated in-place.
+
+        Args:
+            cached_fig: Cached Plotly Figure object
+            x: New x-axis data
+            y: New y-axis data
+            headers: Trace names/headers (not used - assumes structure unchanged)
+
+        Returns:
+            Updated figure object
+
+        Note:
+            If the data structure has changed (different number of traces, headers),
+            invalidate the cache and rebuild from scratch.
+        """
+        import numpy as np
+
+        # Convert to numpy arrays
+        x = np.asarray(x)
+        y = np.asarray(y)
+
+        # Direct trace data update - assumes structure matches cache
+        if len(y.shape) == 1:
+            # Single trace - update first trace directly
+            cached_fig.data[0].x = x
+            cached_fig.data[0].y = y
+
+        elif len(y.shape) == 2:
+            # Multiple traces - update each trace directly
+            # Handle 1D x by tiling to match y's shape
+            if len(x.shape) == 1:
+                x = np.tile(x[:, np.newaxis], (1, y.shape[1]))
+
+            # Update each trace in order
+            for i in range(y.shape[1]):
+                if i < len(cached_fig.data):
+                    cached_fig.data[i].x = x[:, i]
+                    cached_fig.data[i].y = y[:, i]
+                else:
+                    # Data structure mismatch - should invalidate cache
+                    logging.warning(
+                        f"Data structure mismatch: {y.shape[1]} traces provided "
+                        f"but cached figure has {len(cached_fig.data)} traces. "
+                        "Consider invalidating cache."
+                    )
+                    break
+        else:
+            raise ValueError(f"Unsupported y data shape: {y.shape}")
+
+        self._update_trace_margin(cached_fig.layout, x, y)
+
+        return cached_fig
 
     def _create_traces(self, x, y, headers="xyz", **kwargs):
         """Create traces - to be implemented by subclasses"""
@@ -624,6 +726,13 @@ class BasePlotBuilder:
 
         theme_manager = get_theme_manager()
         return theme_manager.get_palette_colors(self.palette, count)
+
+    @classmethod
+    def _update_trace_margin(cls, layout, x=None, y=None):
+        """Get trace margin from theme manager"""
+        # Scale axis limits based on ratio of data range old to new
+        # TODO
+        return None
 
 
 class BasicPlotBuilder(BasePlotBuilder):
