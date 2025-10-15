@@ -48,4 +48,5 @@ class DashboardApp(ABC):
             external_stylesheets=external_stylesheets,
             assets_folder=str(assets_path),
             title=theme.get_dashboard_title(),
+            suppress_callback_exceptions=True,
         )

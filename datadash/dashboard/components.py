@@ -19,7 +19,14 @@ def construct_dash_table(table):
 
     theme = get_theme_manager()
 
+    # Get base style but override problematic sizing properties
     default_style = theme.get_component_style("table_container").copy()
+    # Remove problematic flex and overflow properties that can cause resize loops
+    default_style.pop("flex", None)
+    default_style.pop("overflow-y", None)
+    # Set explicit height instead of flexible sizing
+    if "height" not in default_style:
+        default_style["height"] = "600px"
 
     if isinstance(table, pd.DataFrame):
         # Create proper column definitions for DataTable
@@ -44,14 +51,9 @@ def construct_dash_table(table):
             {"if": {"column_id": "unit"}, "textAlign": "center"},
             {"if": {"column_id": "value"}, "textAlign": "center"},
         ],
-        # style_cell={
-        #     **
-        # },
         style_header={"backgroundColor": "rgb(230, 230, 230)", "fontWeight": "bold"},
-        style_table={**default_style},
+        style_table={**default_style, "overflowY": "auto"},
         page_action="none",
-        fixed_rows={"headers": True},
-        fixed_columns={"headers": 1},
     )
 
 
