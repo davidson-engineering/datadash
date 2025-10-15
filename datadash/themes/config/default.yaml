@@ -35,6 +35,7 @@ fonts:
   footer: &footer_font "'DroidSansMonoNerdFontPropo', 'monospace'"
   table: &table_font "'DroidSansMonoNerdFontPropo', 'monospace'"
   hoverlabels: &hoverlabels_font "DroidSansMonoNerdFontPropo"
+  dropdown: &dropdown_font "'Arial'"
 
 icons:
   tabs:
@@ -163,7 +164,7 @@ styles:
   dropdown-container:
     color: *color_text_primary
     background: *color_primary_bg
-    fontFamily: *body_font
+    fontFamily: *dropdown_font
     fontSize: 1rem
     minWidth: 200px
     display: "block"
