@@ -164,8 +164,6 @@ styles:
   dropdown-container:
     color: *color_text_primary
     background: *color_primary_bg
-    fontFamily: *dropdown_font
-    fontSize: 1rem
     minWidth: 200px
     display: "block"
     padding: "1rem 8% 0rem"
@@ -174,6 +172,8 @@ styles:
 
   dropdown:
     background: *color_secondary_bg
+    fontFamily: *dropdown_font
+    fontSize: 1rem
     border: *dropdown_border
     borderRadius: 8px
 
