@@ -194,3 +194,82 @@ def create_job_selector_dropdown(job_options, current_job_id=None):
         ],
         style=dropdown_container_style,
     )
+
+
+def create_parameter_filter_dropdowns(sweep_analyzer, current_job_id=None):
+    """Create filter dropdowns for each swept parameter to narrow down job selection.
+
+    Args:
+        sweep_analyzer: SweepAnalyzer instance with parameter sweep data
+        current_job_id: Currently selected job ID
+
+    Returns:
+        Container with parameter filter dropdowns in a grid layout (4 per row)
+    """
+    theme = get_theme_manager()
+
+    dropdown_container_style = theme.get_component_style("dropdown-container") or {}
+    dropdown_style = theme.get_component_style("dropdown") or {}
+
+    if not sweep_analyzer or sweep_analyzer.df.empty:
+        return html.Div(id="job-selector-container", style={"display": "none"})
+
+    # Get swept parameters (those with multiple unique values)
+    swept_params = sweep_analyzer.get_swept_parameters()
+
+    if not swept_params:
+        return html.Div(id="job-selector-container", style={"display": "none"})
+
+    # Get current parameter values if we have a selected job
+    current_values = {}
+    if current_job_id and current_job_id in sweep_analyzer.df.index:
+        for param in swept_params:
+            current_values[param] = sweep_analyzer.df.loc[current_job_id, param]
+
+    # Create a dropdown for each swept parameter with formatted values
+    dropdown_cols = []
+    for param in swept_params:
+        param_values = sweep_analyzer.get_parameter_values(param)
+
+        # Format values to 3 decimal places
+        options = [
+            {"label": f"{val:.3f}" if isinstance(val, (int, float)) else str(val), "value": val}
+            for val in param_values
+        ]
+
+        # Use current value if available, otherwise use first option
+        value = current_values.get(param, param_values[0] if param_values else None)
+
+        # Create a column for each dropdown (3 columns per row = width 4)
+        dropdown_cols.append(
+            dbc.Col([
+                html.Label(param, style={"fontWeight": "bold", "marginBottom": "5px", "fontSize": "0.9em"}),
+                dcc.Dropdown(
+                    id={"type": "param-filter", "param": param},
+                    options=options,
+                    value=value,
+                    style=dropdown_style,
+                    clearable=False,
+                ),
+            ], width=3, style={"marginBottom": "15px"})
+        )
+
+    # Arrange dropdowns in rows of 4
+    rows = []
+    for i in range(0, len(dropdown_cols), 4):
+        rows.append(dbc.Row(dropdown_cols[i:i+4], justify="center", style={"marginBottom": "10px"}))
+
+    # Update container style to center content
+    centered_style = dropdown_container_style.copy() if dropdown_container_style else {}
+    centered_style.update({
+        "display": "flex",
+        "justifyContent": "center",
+        "alignItems": "center",
+        "flexDirection": "column",
+    })
+
+    return html.Div(
+        id="job-selector-container",
+        children=rows,
+        style=centered_style,
+    )
