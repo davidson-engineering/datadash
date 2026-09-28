@@ -15,6 +15,18 @@ from ..themes.manager import get_theme_manager
 CURRENT_YEAR = datetime.datetime.now().year
 
 
+# Enough precision for any engineering value, few enough digits to drop binary
+# float noise (0.16499999999999998 -> 0.165) that would otherwise be displayed
+TABLE_SIGNIFICANT_DIGITS = 10
+
+
+def _clean_float(value):
+    """Round floats to TABLE_SIGNIFICANT_DIGITS; leave every other value untouched."""
+    if isinstance(value, float):
+        return float(f"{value:.{TABLE_SIGNIFICANT_DIGITS}g}")
+    return value
+
+
 def construct_dash_table(table):
 
     theme = get_theme_manager()
@@ -40,6 +52,8 @@ def construct_dash_table(table):
             )
         except AttributeError as e:
             raise e
+
+    data = [{k: _clean_float(v) for k, v in row.items()} for row in data]
 
     return dash_table.DataTable(
         id="table",
