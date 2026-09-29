@@ -255,7 +255,7 @@ class ThemeManager:
         return f"/assets/{self.theme_name}.css"
 
     def get_dashboard_title(self) -> str:
-        return self.theme_config.get("dashboard_title", "Robot Simulator")
+        return self.theme_config.get("dashboard_title", "Dashboard")
 
     def _load_palettes(self):
         """Load color palettes from palettes.yaml with caching"""

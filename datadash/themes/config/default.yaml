@@ -1,6 +1,6 @@
 name: default
 description: Original dashboard theme
-dashboard_title: Deltabot Simulator
+dashboard_title: Dashboard
 
 # Palette assignments for trace coloring
 palettes:
