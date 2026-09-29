@@ -1,0 +1,38 @@
+/* dcc.Dropdown draws a button inside the wrapper that receives the theme's
+   `dropdown` style. Let the wrapper's fill, border and corners show through,
+   and give the value the page's type settings, which buttons do not inherit.
+   Colors come from the --Dash-* variables the theme sets on the wrapper. */
+.dash-dropdown-wrapper > button.dash-dropdown {
+    background: transparent;
+    border: none;
+    border-radius: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+}
+
+.dash-dropdown-wrapper > button.dash-dropdown:focus {
+    border: none;
+    outline: none;
+}
+
+.dash-dropdown-wrapper > button.dash-dropdown:focus-visible {
+    outline: 1px solid var(--Dash-Fill-Interactive-Strong);
+}
+
+/* The control height and value inset the dashboards were laid out with */
+.dash-dropdown-wrapper .dash-dropdown-trigger {
+    min-height: 36px;
+    padding: 0 10px;
+}
+
+/* Dash marks the hovered or keyboard-focused option only by recoloring its
+   text in the accent, and the selected option not at all, so neither shows
+   when the accent is close to the text color. Tint them with the accent. */
+.dash-dropdown-wrapper .dash-options-list-option.selected {
+    background: color-mix(in srgb, var(--Dash-Fill-Interactive-Strong) 4%, transparent);
+}
+
+.dash-dropdown-wrapper .dash-options-list-option:not(:has(input[disabled])):hover,
+.dash-dropdown-wrapper .dash-options-list-option:not(:has(input[disabled])):focus-within {
+    background: color-mix(in srgb, var(--Dash-Fill-Interactive-Strong) 8%, transparent);
+}
