@@ -301,6 +301,9 @@ class PlotFigure:
             "overlaying": "y",
             "side": "right",
             "showgrid": False,  # Disable gridlines for secondary axis
+            # Plotly.js 4 syncs an overlaying axis to the primary axis's ticks by
+            # default, which labels converted units at values like 283 and 566
+            "tickmode": "auto",
             "title": {"text": axis_title},
         }
         secondary_y_data = [
