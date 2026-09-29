@@ -8,7 +8,7 @@
 This module provides a registry system for declarative plot definitions.
 """
 
-from .registry import PlotRegistry, register_plot, PlotMetadata
+from .registry import PlotMetadata, PlotRegistry, register_plot
 
 __all__ = [
     "PlotRegistry",

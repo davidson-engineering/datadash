@@ -15,12 +15,11 @@ import logging
 import os
 import warnings
 from dataclasses import dataclass
-import plotly.graph_objects as go
-from typing import Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
-from typing import Any, Dict, List, Union
+import plotly.graph_objects as go
 from mergedeep import merge
 
 from ..themes.manager import get_theme_manager
@@ -49,7 +48,7 @@ def points_to_xyz(points, closed=False):
     points = np.array([np.broadcast_to(el, max_shape) for el in points])
     if closed:
         points = np.concatenate((points, [points[0]]))
-    return dict(zip("xyz", zip(*points)))
+    return dict(zip("xyz", zip(*points, strict=False), strict=False))
 
 
 def get_plot_range(*data: list[np.ndarray], margins=None):
@@ -64,7 +63,7 @@ def get_plot_range(*data: list[np.ndarray], margins=None):
 
     if margins is None:
         return tuple(get_range(axis, 0) for axis in data)
-    return tuple(get_range(axis, margin) for axis, margin in zip(*data, margins))
+    return tuple(get_range(axis, margin) for axis, margin in zip(*data, margins, strict=False))
 
 
 def points_to_xyz_arrays(points):
@@ -315,6 +314,7 @@ def create_trace_constructor(
         warnings.warn(
             f"Static trace '{name}' has time defined - ignoring time",
             UserWarning,
+            stacklevel=2,
         )
         time = None
 
@@ -345,7 +345,8 @@ def create_trace_constructor(
                     data = data.reshape(1, data.shape[0], data.shape[1])
                 else:
                     raise ValueError(
-                        f"Animated trace '{name}': data shape {data.shape} doesn't match time length {n_time}"
+                        f"Animated trace '{name}': data shape {data.shape} doesn't"
+                        f" match time length {n_time}"
                     )
             else:
                 raise ValueError(f"Animated trace '{name}' missing time")
@@ -355,7 +356,8 @@ def create_trace_constructor(
                 n_time = len(time)
                 if data.shape[1] != n_time:
                     raise ValueError(
-                        f"Animated trace '{name}': time dimension {data.shape[1]} doesn't match time length {n_time}"
+                        f"Animated trace '{name}': time dimension {data.shape[1]}"
+                        f" doesn't match time length {n_time}"
                     )
         elif data.ndim == 1:
             raise ValueError(
@@ -459,7 +461,8 @@ class TraceBuilder:
 
         Args:
             constructor: TraceConstructor containing points, properties, and metadata.
-            number_frames: Optional override to resample animated traces to a fixed number of frames.
+            number_frames: Optional override to resample animated traces to a fixed
+                number of frames.
 
         Returns:
             go.Scatter or go.Scatter3d: A Plotly trace ready for plotting.
@@ -599,7 +602,8 @@ class TraceBuilder:
                 # Single point
                 if len(points) < 2:
                     raise ValueError(
-                        f"Trace '{constructor.name}' needs at least 2 coordinates (x, y), got {len(points)}"
+                        f"Trace '{constructor.name}' needs at least 2 coordinates"
+                        f" (x, y), got {len(points)}"
                     )
                 x = points[0:1]  # Keep as array for consistency
                 y = points[1:2]
@@ -610,7 +614,8 @@ class TraceBuilder:
                     raise ValueError(f"Trace '{constructor.name}' has no points")
                 if points.shape[1] < 2:
                     raise ValueError(
-                        f"Trace '{constructor.name}' needs at least 2 coordinates (x, y), got {points.shape[1]}"
+                        f"Trace '{constructor.name}' needs at least 2 coordinates"
+                        f" (x, y), got {points.shape[1]}"
                     )
                 x = points[:, 0]
                 y = points[:, 1]
@@ -661,7 +666,6 @@ class TraceBuilder:
             return points
 
         # Interpolation indices
-        old_idx = np.linspace(0, T - 1, T)
         new_idx = np.linspace(0, T - 1, target_frames)
         i0 = np.floor(new_idx).astype(int)
         i1 = np.clip(i0 + 1, 0, T - 1)

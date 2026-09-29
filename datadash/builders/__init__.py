@@ -2,12 +2,10 @@
 
 from .trace import (
     TraceBuilder,
-    convert_constructors_to_dicts,
-)
-from .trace import build_traces_from_constructors
-from .trace import (
     TraceConstructor,
+    build_traces_from_constructors,
     build_traces_with_themes,
+    convert_constructors_to_dicts,
     create_trace_constructor,
     unpack_constructors,
 )
