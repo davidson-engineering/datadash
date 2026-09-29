@@ -1,5 +1,5 @@
-from dash import html
 import dash_bootstrap_components as dbc
+from dash import html
 from mergedeep import merge
 
 
@@ -11,8 +11,10 @@ class ContentBuilder:
         Initialize ContentBuilder with optional row and column properties
 
         Args:
-            row_properties: Dict or list of dicts for row properties (applied to all rows or per-row)
-            column_properties: Dict or list of dicts for column properties (applied to all columns or per-column)
+            row_properties: Dict or list of dicts for row properties (applied to
+                all rows, or per row)
+            column_properties: Dict or list of dicts for column properties
+                (applied to all columns, or per column)
         """
         self.row_properties = row_properties or {}
         self.column_properties = column_properties or {}
@@ -108,17 +110,19 @@ def merge_properties(default, overrides):
     return merge(default, overrides)
 
 
-def create_three_column_builder(width: int = 4, **kwargs):
-    """Factory for three-column centered dashboard layouts"""
-    default_column_props = {
-        "width": width,  # Bootstrap component prop - each column takes one-third the width
-    }
+def create_three_column_builder(**kwargs):
+    """Factory for three-column centered dashboard layouts.
+
+    Columns stack to one per row below 992px and two per row below 1400px, so
+    charts with two y-axes never get squeezed below a readable width.
+    """
+    default_column_props = {"xs": 12, "lg": 6, "xxl": 4}
     # Center the entire three-column row on the page
     default_row_props = {
-        "justify": "center",  # Bootstrap component prop - center the columns within the row
-        "style": {
-            "margin": "0 auto",
-        },  # CSS for additional page centering
+        "justify": "center",
+        # Space between stacked rows, so one chart's axis title doesn't butt up
+        # against the next chart's title
+        "style": {"margin": "0 auto 1.5rem"},
     }
     row_properties = merge_properties(
         default_row_props, kwargs.get("row_properties", {})
@@ -134,16 +138,17 @@ def create_three_column_builder(width: int = 4, **kwargs):
 
 
 def create_two_column_builder(**kwargs):
-    """Factory for two-column centered dashboard layouts (replaces TwoColumnDashboardBuilder)"""
-    default_column_props = {
-        "width": 4,  # Bootstrap component prop - each column takes half the width
-    }
+    """Factory for two-column centered dashboard layouts.
+
+    Two columns from 992px up, one per row below that.
+    """
+    default_column_props = {"xs": 12, "lg": 6}
     # Center the entire two-column row on the page
     default_row_props = {
-        "justify": "center",  # Bootstrap component prop - center the columns within the row
-        "style": {
-            "margin": "0 auto",
-        },  # CSS for additional page centering
+        "justify": "center",
+        # Space between stacked rows, so one chart's axis title doesn't butt up
+        # against the next chart's title
+        "style": {"margin": "0 auto 1.5rem"},
     }
     row_properties = merge_properties(
         default_row_props, kwargs.get("row_properties", {})
@@ -234,10 +239,13 @@ def create_split_window_builder(**kwargs):
     Args:
         left_width: Width of the main (left) plot column (default: 8)
         right_width: Width of the grid (right) column (default: 4)
+        breakpoint: Bootstrap breakpoint from which the columns sit side by
+            side (default: "xl"); below it they stack full width
         **kwargs: Additional customization options
     """
     left_width = kwargs.get("left_width", 8)
     right_width = kwargs.get("right_width", 4)
+    breakpoint = kwargs.get("breakpoint", "xl")
 
     # Properties for the main split row (large plot + grid column)
     default_row_props = {
@@ -250,8 +258,8 @@ def create_split_window_builder(**kwargs):
 
     # Column properties for the main split
     column_properties = [
-        {"width": left_width},  # Large plot column
-        {"width": right_width},  # Grid column
+        {"xs": 12, breakpoint: left_width},  # Large plot column
+        {"xs": 12, breakpoint: right_width},  # Grid column
     ]
 
     row_properties = merge_properties(
@@ -280,7 +288,7 @@ def create_split_window_layout(main_plots, grid_plots, **kwargs):
     # Create the 2x2 grid from the grid plots
     grid_builder = ContentBuilder(
         row_properties={"style": {"margin-bottom": "0.5rem"}},
-        column_properties={"width": 6},  # Each grid cell takes half the grid column
+        column_properties={"xs": 12, "md": 6},  # 2x2 grid, one per row on phones
     )
 
     # Ensure we have exactly 4 plots, padding with None if necessary
