@@ -9,15 +9,15 @@ This is a standalone datadash component with no external dependencies.
 Provides caching for complete Plotly figure objects, enabling efficient
 data-only updates without rebuilding styling, layout, or themes.
 
+Every BasePlotBuilder creates a FigureCacheManager; see CACHING.md.
+
 Example:
-    >>> import redis
     >>> from datadash.builders.figure_cache import FigureCacheManager
     >>> from datadash.builders.plot import BasicPlotBuilder
     >>>
-    >>> cache = FigureCacheManager.from_redis()  # Auto-connect to localhost
-    >>> builder = BasicPlotBuilder(cache_manager=cache)
-    >>>
-    >>> fig = builder.create_plot(x, y, plot_id="my_plot")  # Fast updates!
+    >>> builder = BasicPlotBuilder()  # caches in Redis at localhost:6379
+    >>> builder.cache_manager = FigureCacheManager(host="redis", ttl=3600)
+    >>> fig = builder.create_plot(x, y, title="Plot", plot_id="my_plot")
 """
 
 from __future__ import annotations
@@ -35,7 +35,8 @@ logger = logging.getLogger(__name__)
 
 # Bump whenever figure layout or styling changes, so figures cached by an older
 # version are not served. v2: legends, display labels, equal-aspect spatial plots.
-FIGURE_CACHE_VERSION = 2
+# v3: flat axes widened on spatial plots.
+FIGURE_CACHE_VERSION = 3
 
 
 class FigureCacheManager:

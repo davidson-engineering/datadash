@@ -37,7 +37,7 @@ def create_combined_traces(
 
     Args:
         x: Array-like, 1D or 2D x-axis data.
-        y: Array-like, 2D y-axis data.
+        y: Array-like y-axis data, one column per trace (1D for a single trace).
         headers: Iterable of trace names. Defaults to numeric indices if None.
         hover_template: Optional string for hover text formatting.
 
@@ -51,9 +51,13 @@ def create_combined_traces(
     x = np.asarray(x)
     y = np.asarray(y)
 
+    # A single series is one column
+    if y.ndim == 1:
+        y = y[:, np.newaxis]
+
     # Validate input shapes
     if len(y.shape) != 2:
-        raise ValueError("y must be 2D")
+        raise ValueError("y must be 1D or 2D")
     if len(x.shape) > 2:
         raise ValueError("x must be 1D or 2D")
 
@@ -135,6 +139,23 @@ def create_subplots_traces(
 # =============================================================================
 
 
+
+def _widen_flat_axis(xrange, yrange, flatness=1e-3):
+    """Give an axis with no extent the other axis's span, centred on its data.
+
+    Spatial plots scale both axes equally, so a planar path seen edge-on (all
+    of its Y values equal, say) would otherwise collapse the plot to a sliver.
+    """
+    xspan = xrange[1] - xrange[0]
+    yspan = yrange[1] - yrange[0]
+    if abs(yspan) <= flatness * abs(xspan):
+        centre = (yrange[0] + yrange[1]) / 2
+        yrange = (centre - abs(xspan) / 2, centre + abs(xspan) / 2)
+    elif abs(xspan) <= flatness * abs(yspan):
+        centre = (xrange[0] + xrange[1]) / 2
+        xrange = (centre - abs(yspan) / 2, centre + abs(yspan) / 2)
+    return xrange, yrange
+
 class SpatialPlotBuilder:
     """Base class for building spatial plots with common functionality"""
 
@@ -185,19 +206,20 @@ class SpatialPlotBuilder:
 
         # Calculate ranges if not provided
         if xrange is None:
-            xrange = get_plot_range(x_data, margins=[margin, margin])
+            (xrange,) = get_plot_range([x_data], margins=[margin])
         if yrange is None:
-            yrange = get_plot_range(y_data, margins=[margin, margin])
+            (yrange,) = get_plot_range([y_data], margins=[margin])
+        xrange, yrange = _widen_flat_axis(xrange, yrange)
 
-        # For Z-axis plots (XZ, YZ), flip the Y-axis direction so positive Z goes down
         # Equal scaling on both axes, so the projected path isn't distorted.
         # constrain="domain" shrinks the plot area to fit instead of overflowing.
-        yaxis_config = {"constrain": "domain", "scaleanchor": "x", "scaleratio": 1}
-        if y_title == "Z":
-            if yrange is not None:
-                yaxis_config["range"] = yrange[::-1]
-            else:
-                yaxis_config["autorange"] = "reversed"
+        # For Z-axis plots (XZ, YZ), flip the Y-axis direction so positive Z goes down.
+        yaxis_config = {
+            "constrain": "domain",
+            "scaleanchor": "x",
+            "scaleratio": 1,
+            "range": yrange[::-1] if y_title == "Z" else yrange,
+        }
 
         return {
             "scene": {},
@@ -440,7 +462,7 @@ class BasePlotBuilder:
         y_units="",
         secondary_axis=None,
         hover_precision=3,
-        headers="xyz",
+        headers=None,
         hovermode="x unified",
         palette: str = "primary",
         plot_id: str = None,
@@ -460,7 +482,8 @@ class BasePlotBuilder:
             y_units: Y-axis units
             secondary_axis: Secondary axis configuration (optional)
             hover_precision: Hover text precision
-            headers: Trace headers/names
+            headers: Trace headers/names, one per column of y (default: the
+                builder's own, e.g. "xyz" for subplots, "123" for combined)
             hovermode: Hover mode setting
             palette: Color palette to use
             plot_id: Unique plot identifier for caching (required for cache to work)
@@ -491,6 +514,8 @@ class BasePlotBuilder:
 
         # Cache miss or caching disabled - build figure from scratch
         # Get the appropriate trace constructor and figure class
+        # Each builder has its own default headers, used unless given here
+        header_kwargs = {} if headers is None else {"headers": headers}
         traces = self._create_traces(
             x,
             y,
@@ -498,7 +523,7 @@ class BasePlotBuilder:
             x_title=x_title,
             x_units=x_units,
             y_units=y_units,
-            headers=headers,
+            **header_kwargs,
             **kwargs,
         )
         # Get trace names and apply themes through theme manager
@@ -524,7 +549,11 @@ class BasePlotBuilder:
 
         fig = figure_instance.figure
         if labels is not None:
-            names = labels if isinstance(labels, dict) else dict(zip(headers, labels, strict=True))
+            if isinstance(labels, dict):
+                names = labels
+            else:
+                keys = headers if headers is not None else [t.name for t in fig.data]
+                names = dict(zip(keys, labels, strict=True))
             fig.for_each_trace(
                 lambda trace: trace.update(name=names[trace.name])
                 if trace.name in names
@@ -746,10 +775,12 @@ class BasePlotBuilder:
 class BasicPlotBuilder(BasePlotBuilder):
     """Builder for basic single plots (PlotFigure)"""
 
-    def _create_traces(self, x, y, **kwargs):
+    def _create_traces(self, x, y, headers=None, **kwargs):
         hover_template = None
 
-        return create_combined_traces(x, y, hover_template=hover_template)
+        return create_combined_traces(
+            x, y, hover_template=hover_template, headers=headers
+        )
 
     def _create_figure(self, traces, layout, **kwargs):
         return PlotFigure(trace_constructor=traces, layout=layout)
