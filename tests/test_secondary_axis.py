@@ -1,6 +1,7 @@
 """Secondary y-axis on single-axis plots."""
 
 import numpy as np
+
 from datadash.builders.plot import CombinedPlotBuilder
 
 

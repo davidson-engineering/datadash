@@ -1,6 +1,7 @@
 """Theme layout precedence and table formatting."""
 
 import pandas as pd
+
 from datadash.builders.figure import PlotFigure
 from datadash.dashboard.components import _column_alignment, construct_dash_table
 
