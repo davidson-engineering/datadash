@@ -21,16 +21,21 @@ Example:
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional, Dict, Any
+
+import gzip
 import logging
 import pickle
-import gzip
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     from plotly.graph_objs import Figure
-    import redis
 
 logger = logging.getLogger(__name__)
+
+
+# Bump whenever figure layout or styling changes, so figures cached by an older
+# version are not served. v2: legends, display labels, equal-aspect spatial plots.
+FIGURE_CACHE_VERSION = 2
 
 
 class FigureCacheManager:
@@ -75,7 +80,9 @@ class FigureCacheManager:
 
         """
         self.ttl = ttl
-        self.namespace = namespace
+        # Cached figures carry their full layout and styling, so the version is
+        # part of every key: bumping it makes old-style figures unreachable.
+        self.namespace = f"{namespace}:v{FIGURE_CACHE_VERSION}"
 
         try:
             import redis as redis_module

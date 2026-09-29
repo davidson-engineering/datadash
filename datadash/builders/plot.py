@@ -5,23 +5,23 @@
 
 import logging
 from typing import Union
-from .figure_cache import FigureCacheManager
+
 import numpy as np
-from mergedeep import merge, Strategy
+from mergedeep import merge
+from plotly.colors import sample_colorscale
+
+from ..themes.manager import get_theme_manager
+from .figure import CombinedAxisFigure, PlotFigure, PlotFigure3D, SubplotsFigure
+from .figure_cache import FigureCacheManager
+from .layout import PlotLayoutBuilder
 
 # Import core utilities
 from .trace import (
-    get_plot_range,
     TraceBuilder,
     TraceConstructor,
     create_trace_constructor,
+    get_plot_range,
 )
-from .figure import PlotFigure, PlotFigure3D, CombinedAxisFigure, SubplotsFigure
-from ..themes.manager import get_theme_manager
-from .layout import PlotLayoutBuilder
-from plotly.colors import sample_colorscale
-
-import numpy as np
 
 FigureCacheManager().clear_all()  # Clear all cached figures on module load (for development)
 
@@ -115,7 +115,7 @@ def create_subplots_traces(
         cols = [1, 1, 1]
 
     data = []
-    for axis, header in zip(np.asarray(y).T, headers):
+    for axis, header in zip(np.asarray(y).T, headers, strict=False):
         trace = create_trace_constructor(
             name=header, data=np.column_stack([x, axis]), static=True
         )
@@ -190,7 +190,9 @@ class SpatialPlotBuilder:
             yrange = get_plot_range(y_data, margins=[margin, margin])
 
         # For Z-axis plots (XZ, YZ), flip the Y-axis direction so positive Z goes down
-        yaxis_config = {"constrain": "domain"}  # no scaleanchor here
+        # Equal scaling on both axes, so the projected path isn't distorted.
+        # constrain="domain" shrinks the plot area to fit instead of overflowing.
+        yaxis_config = {"constrain": "domain", "scaleanchor": "x", "scaleratio": 1}
         if y_title == "Z":
             if yrange is not None:
                 yaxis_config["range"] = yrange[::-1]
@@ -201,11 +203,11 @@ class SpatialPlotBuilder:
             "scene": {},
             "xaxis": {"range": xrange, "constrain": "domain"},
             "yaxis": yaxis_config,
-            "autosize": False,
+            "showlegend": False,
             **kwargs,
         }
 
-    def create_3d_layout_overrides(self, title="3D End Effector Trajectory"):
+    def create_3d_layout_overrides(self, title="End Effector Path (3D)"):
         """Create layout overrides for 3D spatial plots"""
         return {
             "scene": {
@@ -214,8 +216,10 @@ class SpatialPlotBuilder:
                 "zaxis_title": "Z [m]",
                 "aspectmode": "cube",
             },
-            "title": title,
-            "autosize": False,
+            "title_text": title,
+            "showlegend": False,
+            # Room for the tilted scene's tick labels, which clipped at the edges
+            "margin": {"l": 10, "r": 10, "t": 60, "b": 10},
         }
 
     @classmethod
@@ -229,7 +233,7 @@ class Spatial2DPlotBuilder(SpatialPlotBuilder):
     """Builder for 2D spatial plots (XY, XZ, YZ projections)"""
 
     def create_2d_plot(
-        self, position, velocity_norm, axis_indices, axis_names, plot_name
+        self, position, velocity_norm, axis_indices, axis_names, plot_name, title=None
     ):
         x_data, y_data = self.extract_position_data(position, axis_indices)
         x_range = self.calculate_range(x_data)
@@ -273,7 +277,7 @@ class Spatial2DPlotBuilder(SpatialPlotBuilder):
         # Use PlotLayoutBuilder with overrides
         layout = self.layout_builder.create_plot_layout(
             mode="basic",
-            title=f"End Effector Trajectory Position {plot_name}",
+            title=title or f"End Effector Path ({plot_name})",
             x_title=axis_names[0],
             y_title=axis_names[1],
             x_units="m",
@@ -282,6 +286,8 @@ class Spatial2DPlotBuilder(SpatialPlotBuilder):
 
         # Deep-merge the spatial overrides (preserve reversed Z)
         merge(layout, spatial_overrides)
+        # "basic" mode appends the y units to the title; both axes already carry them
+        layout["title_text"] = title or f"End Effector Path ({plot_name})"
         trace_properties["name"] = trace_properties.get("name", "trace_0")
 
         # Create standard trace constructor with line trace
@@ -439,6 +445,7 @@ class BasePlotBuilder:
         palette: str = "primary",
         plot_id: str = None,
         use_cache: bool = True,
+        labels=None,
         **kwargs,
     ):
         """Create a complete plot by coordinating all components.
@@ -458,6 +465,9 @@ class BasePlotBuilder:
             palette: Color palette to use
             plot_id: Unique plot identifier for caching (required for cache to work)
             use_cache: Whether to use Redis cache (default: True)
+            labels: Display names for the legend and hover, one per header (or a
+                ``{header: label}`` dict). Headers stay the traces' internal
+                keys, which is what the theme matches trace styles against.
             **kwargs: Additional arguments
 
         Returns:
@@ -513,6 +523,13 @@ class BasePlotBuilder:
             figure_instance.add_secondary_axis(**secondary_axis)
 
         fig = figure_instance.figure
+        if labels is not None:
+            names = labels if isinstance(labels, dict) else dict(zip(headers, labels, strict=True))
+            fig.for_each_trace(
+                lambda trace: trace.update(name=names[trace.name])
+                if trace.name in names
+                else None
+            )
 
         # Cache the figure if plot_id is provided
         if use_cache and plot_id and self.cache_manager and self.cache_manager.enabled:

@@ -4,10 +4,9 @@
 # Davidson Engineering Ltd. © 2023
 
 from abc import ABC, abstractmethod
-import dash
 from pathlib import Path
-import dash_bootstrap_components as dbc
 
+import dash
 
 assets_path = Path("../assets/")
 
@@ -34,8 +33,11 @@ class DashboardApp(ABC):
 
         theme = get_theme_manager()
 
-        # Add external stylesheets
-        external_stylesheets = [dbc.themes.BOOTSTRAP]
+        # No external Bootstrap: assets/bootstrap.min.css (Bootswatch Lux) is a
+        # complete Bootstrap build and is loaded automatically from the assets
+        # folder. Adding the CDN copy as well loaded two Bootstraps that fought
+        # over the same selectors.
+        external_stylesheets = []
 
         # # Add theme-specific font CSS
         # font_css = theme.get_font_css()
