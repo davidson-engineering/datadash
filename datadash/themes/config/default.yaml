@@ -205,6 +205,11 @@ styles:
     fontSize: 1rem
     border: *dropdown_border
     borderRadius: 8px
+    # dcc.Dropdown colors its button and menu from these variables, which
+    # cascade from this style (see assets/dash-components.css)
+    "--Dash-Fill-Interactive-Strong": *color_accent
+    "--Dash-Stroke-Strong": *color_border
+    "--Dash-Text-Strong": *color_text_primary
 
 plotly:
   layout:

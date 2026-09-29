@@ -4,7 +4,7 @@
 # Davidson Engineering Ltd. © 2023
 
 import dash_bootstrap_components as dbc
-from dash import dash_table, dcc, html
+from dash import dcc, html
 from mergedeep import merge
 
 from ..themes.manager import get_theme_manager
@@ -36,8 +36,8 @@ def _column_alignment(rows, column):
     return "right" if values and numeric * 2 >= len(values) else "left"
 
 
-def construct_dash_table(table, table_id="table", max_width=None):
-    """Render a DataFrame as a themed DataTable.
+def construct_dash_table(table, table_id="table", max_width=None, cell_style=None):
+    """Render a DataFrame as a themed, read-only HTML table.
 
     Numeric columns are right-aligned and text columns left-aligned, decided from
     the data rather than from column names. The table scrolls inside a container
@@ -45,33 +45,50 @@ def construct_dash_table(table, table_id="table", max_width=None):
 
     Args:
         table: DataFrame (or DataFrame-like with ``columns`` and ``to_dict``)
-        table_id: Component id; must be unique within the page
+        table_id: Id of the scroll container; must be unique within the page
         max_width: Optional CSS max-width, to keep narrow tables (few columns)
             from stretching their values far away from their labels
+        cell_style: Optional CSS applied to every cell, header included, over
+            the theme's styles (e.g. ``{"whiteSpace": "nowrap"}``)
     """
     theme = get_theme_manager()
 
-    columns = [{"name": col, "id": col} for col in table.columns]
-    data = table.to_dict("records")
-    data = [{k: _clean_float(v) for k, v in row.items()} for row in data]
+    columns = list(table.columns)
+    rows = [{k: _clean_float(v) for k, v in row.items()} for row in table.to_dict("records")]
+    alignment = {col: _column_alignment(rows, col) for col in columns}
 
-    header_style = theme.get_component_style("table_header")
-    return dash_table.DataTable(
-        id=table_id,
-        columns=columns,
-        data=data,
-        style_cell=theme.get_component_style("table_cell"),
-        style_cell_conditional=[
-            {"if": {"column_id": col["id"]}, "textAlign": _column_alignment(data, col["id"])}
-            for col in columns
-        ],
+    # Cells use the font's own line height rather than the page's, as the
+    # theme's cell padding assumes
+    header_style = {
+        "lineHeight": "normal",
+        **theme.get_component_style("table_header"),
         # Sticky within the table's own scroll container
-        style_header={**header_style, "position": "sticky", "top": 0, "zIndex": 1},
-        style_table={
+        "position": "sticky",
+        "top": 0,
+        "zIndex": 1,
+        **(cell_style or {}),
+    }
+    body_style = {
+        "lineHeight": "normal",
+        **theme.get_component_style("table_cell"),
+        **(cell_style or {}),
+    }
+
+    header_styles = {col: {**header_style, "textAlign": alignment[col]} for col in columns}
+    body_styles = {col: {**body_style, "textAlign": alignment[col]} for col in columns}
+
+    header = html.Tr([html.Th(col, style=header_styles[col]) for col in columns])
+    body = [html.Tr([html.Td(row[col], style=body_styles[col]) for col in columns]) for row in rows]
+    # Separate borders, so the pinned header keeps its bottom border while the
+    # rows scroll under it (collapsed borders stay with the table)
+    table_style = {"width": "100%", "borderCollapse": "separate", "borderSpacing": 0}
+    return html.Div(
+        html.Table([html.Thead(header), html.Tbody(body)], style=table_style),
+        id=table_id,
+        style={
             **theme.get_component_style("table_container"),
             **({"maxWidth": max_width} if max_width else {}),
         },
-        page_action="none",
     )
 
 

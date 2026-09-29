@@ -8,7 +8,7 @@ results dashboards on top of any computation.
 datadash is released as git tags. Pin one in your project:
 
 ```bash
-uv add "datadash @ git+https://github.com/davidson-engineering/datadash@v0.1.0"
+uv add "datadash @ git+https://github.com/davidson-engineering/datadash@v0.2.0"
 ```
 
 or in `pyproject.toml`:
@@ -18,7 +18,7 @@ or in `pyproject.toml`:
 dependencies = ["datadash"]
 
 [tool.uv.sources]
-datadash = { git = "https://github.com/davidson-engineering/datadash", tag = "v0.1.0" }
+datadash = { git = "https://github.com/davidson-engineering/datadash", tag = "v0.2.0" }
 ```
 
 Requires Python 3.13.
@@ -90,7 +90,7 @@ fig = BasicPlotBuilder().create_plot(
 | `create_tabs(children, id, value)`, `create_themed_tab(label, value)` | Tab bar (first tab selected unless `value` is given) and tabs (with the theme's tab icons) |
 | `create_main_container(children)`, `create_body_container(children)`, `create_tab_layout(children)` | Page structure |
 | `create_graph_component(graph_id, figure, width)` | A `dcc.Graph` in a themed card |
-| `construct_dash_table(table, table_id, max_width)` | A `DataTable` from a DataFrame, numbers right-aligned and floats rounded, with a sticky header |
+| `construct_dash_table(table, table_id, max_width, cell_style)` | A read-only HTML table from a DataFrame, numbers right-aligned and floats rounded, with a sticky header |
 | `create_job_selector_dropdown(job_options, current_job_id)` | A single job dropdown |
 | `create_parameter_filter_dropdowns(sweep_analyzer, current_job_id, formatter)` | One dropdown per swept parameter; `formatter(param)` returns `(label, unit)` for display |
 | `parameter_filter_container_style()` | The filter bar style, for callbacks that hide and show it |
