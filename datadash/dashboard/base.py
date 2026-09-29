@@ -8,7 +8,8 @@ from pathlib import Path
 
 import dash
 
-assets_path = Path("../assets/")
+# Bootstrap build and bundled fonts, served by Dash from the package itself
+assets_path = Path(__file__).resolve().parent.parent / "assets"
 
 
 class DashboardApp(ABC):

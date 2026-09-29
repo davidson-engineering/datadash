@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+
 from datadash.builders.plot import BasicPlotBuilder, CombinedPlotBuilder, SubplotsPlotBuilder
 
 T = np.linspace(0, 1, 20)

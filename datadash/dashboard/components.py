@@ -3,16 +3,11 @@
 # 2023/01/23
 # Davidson Engineering Ltd. © 2023
 
-import datetime
-
 import dash_bootstrap_components as dbc
 from dash import dash_table, dcc, html
 from mergedeep import merge
 
 from ..themes.manager import get_theme_manager
-
-CURRENT_YEAR = datetime.datetime.now().year
-
 
 # Enough precision for any engineering value, few enough digits to drop binary
 # float noise (0.16499999999999998 -> 0.165) that would otherwise be displayed
@@ -80,7 +75,8 @@ def construct_dash_table(table, table_id="table", max_width=None):
     )
 
 
-def create_tabs(children, id="dashboard", value="actuator-dynamics", style=None):
+def create_tabs(children, id="dashboard", value=None, style=None):
+    """Themed tab bar. With no ``value``, the first tab starts selected."""
 
     theme = get_theme_manager()
 
@@ -89,9 +85,13 @@ def create_tabs(children, id="dashboard", value="actuator-dynamics", style=None)
         merge(default_style, style)
     style = default_style
 
+    # dcc.Tabs falls back to its first tab only when value is absent: an
+    # explicit None is serialized and leaves no tab selected.
+    selection = {} if value is None else {"value": value}
+
     return dcc.Tabs(
         id=id,
-        value=value,
+        **selection,
         children=children,
         style=style,
         # dcc.Tabs stacks tabs vertically below 800px by default, which overflowed
@@ -156,14 +156,17 @@ def create_main_container(children=None, style=None):
     )
 
 
-def create_dashboard_header(title="Robot Simulator"):
+def create_dashboard_header(title=None):
+    """Page title; defaults to the theme's ``dashboard_title``."""
 
     theme = get_theme_manager()
 
+    if title is None:
+        title = theme.get_dashboard_title()
     return html.H1(title, style=theme.get_component_style("header"))
 
 
-def create_dashboard_footer(text=f"Davidson Engineering Ltd. © {CURRENT_YEAR}"):
+def create_dashboard_footer(text=""):
 
     theme = get_theme_manager()
 

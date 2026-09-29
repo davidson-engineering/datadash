@@ -1,6 +1,7 @@
 """Equal-aspect spatial plots stay readable for any path."""
 
 import numpy as np
+
 from datadash.builders.plot import Spatial2DPlotBuilder
 
 # A planar arc in XZ: seen from above (XY) or the side (YZ) it has no Y extent

@@ -1,0 +1,48 @@
+# Lint and test against uv.lock on every push and pull request. A weekly run
+# re-resolves to the newest versions allowed by pyproject.toml, which is what
+# projects installing datadash get, to catch upstream breakage early.
+
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v7
+    - uses: astral-sh/setup-uv@v10.2.0
+      with:
+        enable-cache: true
+    - name: Install from the lock file
+      run: uv sync --locked
+    - name: Lint
+      run: uv run ruff check .
+    - name: Test
+      run: uv run pytest
+
+  latest-dependencies:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v7
+    - uses: astral-sh/setup-uv@v10.2.0
+    - name: Install the newest allowed versions
+      run: uv sync --upgrade
+    - name: Test
+      run: uv run pytest

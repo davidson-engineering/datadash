@@ -1,21 +1,34 @@
 # datadash
 
-Themed Plotly figure builders and Dash dashboard components. It is the
-presentation layer of
-[robot-dashboard](https://github.com/davidson-engineering/robot-dashboard),
-where it sits beside [robot-simulator](https://github.com/davidson-engineering/robot-simulator)
-as a submodule in one uv workspace.
+Themed Plotly figure builders and Dash dashboard components, for building
+results dashboards on top of any computation.
 
 ## Installation
 
-Inside the robot-dashboard workspace, `uv sync` at the workspace root installs
-it. On its own:
+datadash is released as git tags. Pin one in your project:
 
 ```bash
-pip install git+https://github.com/davidson-engineering/datadash.git
+uv add "datadash @ git+https://github.com/davidson-engineering/datadash@v0.1.0"
+```
+
+or in `pyproject.toml`:
+
+```toml
+[project]
+dependencies = ["datadash"]
+
+[tool.uv.sources]
+datadash = { git = "https://github.com/davidson-engineering/datadash", tag = "v0.1.0" }
 ```
 
 Requires Python 3.13.
+
+## Public API
+
+The names exported from the top-level package (`datadash.__all__`) are the
+public API, e.g. `from datadash import CombinedPlotBuilder, set_theme`. They are
+loaded on first use, so `import datadash` is cheap. Everything else is internal
+and may change between minor versions while datadash is at 0.x.
 
 ## Themes
 
@@ -73,8 +86,8 @@ fig = BasicPlotBuilder().create_plot(
 
 | Function | Returns |
 | --- | --- |
-| `create_dashboard_header(title)`, `create_dashboard_footer(text)` | Page header and footer |
-| `create_tabs(children, id, value)`, `create_themed_tab(label, value)` | Tab bar and tabs (with the theme's tab icons) |
+| `create_dashboard_header(title)`, `create_dashboard_footer(text)` | Page header (defaults to the theme's `dashboard_title`) and footer |
+| `create_tabs(children, id, value)`, `create_themed_tab(label, value)` | Tab bar (first tab selected unless `value` is given) and tabs (with the theme's tab icons) |
 | `create_main_container(children)`, `create_body_container(children)`, `create_tab_layout(children)` | Page structure |
 | `create_graph_component(graph_id, figure, width)` | A `dcc.Graph` in a themed card |
 | `construct_dash_table(table, table_id, max_width)` | A `DataTable` from a DataFrame, numbers right-aligned and floats rounded, with a sticky header |
@@ -88,8 +101,21 @@ the assets folder and page title), then call `run(debug, port, host)`.
 
 ## Development
 
-From the robot-dashboard workspace root:
-
 ```bash
-uv run pytest src/datadash/tests
+uv sync            # installs datadash and the dev tools from uv.lock
+uv run pytest
+uv run ruff check .
 ```
+
+CI (`.github/workflows/ci.yml`) runs both against `uv.lock` on every push and
+pull request, and weekly against the newest dependency versions
+`pyproject.toml` allows.
+
+To work on datadash alongside an app that uses it, install your checkout into
+the app's environment for the session: `uv pip install -e ../datadash` from the
+app. The app's next `uv sync` restores its pinned tag.
+
+## Releasing
+
+Bump `version` in `pyproject.toml`, merge to `main`, then tag that commit
+`v<version>` and push the tag. Apps upgrade by changing the tag they pin.
