@@ -3,7 +3,6 @@
 # 2023/01/23
 # Davidson Engineering Ltd. © 2023
 
-import logging
 from typing import Union
 
 import numpy as np
@@ -12,7 +11,6 @@ from plotly.colors import sample_colorscale
 
 from ..themes.manager import get_theme_manager
 from .figure import CombinedAxisFigure, PlotFigure, PlotFigure3D, SubplotsFigure
-from .figure_cache import FigureCacheManager
 from .layout import PlotLayoutBuilder
 
 # Import core utilities
@@ -22,8 +20,6 @@ from .trace import (
     create_trace_constructor,
     get_plot_range,
 )
-
-FigureCacheManager().clear_all()  # Clear all cached figures on module load (for development)
 
 
 def create_combined_traces(
@@ -91,7 +87,9 @@ def create_combined_traces(
             props = (
                 trace.properties.to_dict()
                 if hasattr(trace.properties, "to_dict")
-                else trace.properties if isinstance(trace.properties, dict) else {}
+                else trace.properties
+                if isinstance(trace.properties, dict)
+                else {}
             )
             props["hovertemplate"] = hover_template
             trace.properties = props
@@ -427,7 +425,6 @@ class BasePlotBuilder:
 
     def __init__(self):
         self.layout_builder = PlotLayoutBuilder
-        self.cache_manager = FigureCacheManager()
 
     def create_plot(
         self,
@@ -443,8 +440,6 @@ class BasePlotBuilder:
         headers="xyz",
         hovermode="x unified",
         palette: str = "primary",
-        plot_id: str = None,
-        use_cache: bool = True,
         labels=None,
         **kwargs,
     ):
@@ -463,8 +458,6 @@ class BasePlotBuilder:
             headers: Trace headers/names
             hovermode: Hover mode setting
             palette: Color palette to use
-            plot_id: Unique plot identifier for caching (required for cache to work)
-            use_cache: Whether to use Redis cache (default: True)
             labels: Display names for the legend and hover, one per header (or a
                 ``{header: label}`` dict). Headers stay the traces' internal
                 keys, which is what the theme matches trace styles against.
@@ -475,21 +468,6 @@ class BasePlotBuilder:
         """
         self.palette = palette
 
-        # Try to restore from cache if plot_id is provided
-        if use_cache and plot_id and self.cache_manager:
-            cached_fig = self.cache_manager.get(plot_id)
-            if cached_fig is not None:
-                # Update the cached figure with new data
-                fig = self._update_cached_figure(
-                    cached_fig=cached_fig,
-                    x=x,
-                    y=y,
-                    headers=headers,
-                    secondary_axis=secondary_axis,
-                )
-                return fig
-
-        # Cache miss or caching disabled - build figure from scratch
         # Get the appropriate trace constructor and figure class
         traces = self._create_traces(
             x,
@@ -524,77 +502,20 @@ class BasePlotBuilder:
 
         fig = figure_instance.figure
         if labels is not None:
-            names = labels if isinstance(labels, dict) else dict(zip(headers, labels, strict=True))
+            names = (
+                labels
+                if isinstance(labels, dict)
+                else dict(zip(headers, labels, strict=True))
+            )
             fig.for_each_trace(
-                lambda trace: trace.update(name=names[trace.name])
-                if trace.name in names
-                else None
+                lambda trace: (
+                    trace.update(name=names[trace.name])
+                    if trace.name in names
+                    else None
+                )
             )
 
-        # Cache the figure if plot_id is provided
-        if use_cache and plot_id and self.cache_manager and self.cache_manager.enabled:
-            self.cache_manager.set(plot_id, fig)
-
         return fig
-
-    def _update_cached_figure(self, cached_fig, x, y, headers, secondary_axis=None):
-        """Update a cached figure with new x/y data.
-
-        This method assumes the data structure (number of traces, headers) remains
-        constant between updates. Only x/y data arrays are updated in-place.
-
-        Args:
-            cached_fig: Cached Plotly Figure object
-            x: New x-axis data
-            y: New y-axis data
-            headers: Trace names/headers (not used - assumes structure unchanged)
-
-        Returns:
-            Updated figure object
-
-        Note:
-            If the data structure has changed (different number of traces, headers),
-            invalidate the cache and rebuild from scratch.
-        """
-        import numpy as np
-
-        # Convert to numpy arrays
-        x = np.asarray(x)
-        y = np.asarray(y)
-
-        # Direct trace data update - assumes structure matches cache
-        if len(y.shape) == 1:
-            # Single trace - update first trace directly
-            cached_fig.data[0].x = x
-            cached_fig.data[0].y = y
-
-        elif len(y.shape) == 2:
-            # Multiple traces - update each trace directly
-            # Handle 1D x by tiling to match y's shape
-            if len(x.shape) == 1:
-                x = np.tile(x[:, np.newaxis], (1, y.shape[1]))
-
-            # Update each trace in order
-            for i in range(y.shape[1]):
-                if i < len(cached_fig.data):
-                    cached_fig.data[i].x = x[:, i]
-                    cached_fig.data[i].y = y[:, i]
-                else:
-                    # Data structure mismatch - should invalidate cache
-                    logging.warning(
-                        f"Data structure mismatch: {y.shape[1]} traces provided "
-                        f"but cached figure has {len(cached_fig.data)} traces. "
-                        "Consider invalidating cache."
-                    )
-                    break
-        else:
-            raise ValueError(f"Unsupported y data shape: {y.shape}")
-
-        self._update_trace_margin(
-            cached_fig.layout, x, y, secondary_axis=secondary_axis
-        )
-
-        return cached_fig
 
     def _create_traces(self, x, y, headers="xyz", **kwargs):
         """Create traces - to be implemented by subclasses"""
@@ -722,25 +643,6 @@ class BasePlotBuilder:
 
         theme_manager = get_theme_manager()
         return theme_manager.get_palette_colors(self.palette, count)
-
-    @classmethod
-    def _update_trace_margin(cls, layout, x=None, y=None, secondary_axis=None):
-        """Get trace margin from theme manager"""
-        # Scale axis limits based on ratio of data range old to new
-        theme = get_theme_manager()
-        margin = theme.get_settings().get("trace_margin", 0)
-        _x_range, _y_range = get_plot_range([x, y], margins=[0, margin])
-        if _x_range is not None:
-            layout.xaxis.range = _x_range
-        if _y_range is not None:
-            layout.yaxis.range = _y_range
-        if secondary_axis and hasattr(layout, "yaxis2"):
-            if _y_range is not None:
-                layout.yaxis2.range = tuple(
-                    el * secondary_axis.get("scale", 1) for el in _y_range
-                )
-
-        return None
 
 
 class BasicPlotBuilder(BasePlotBuilder):

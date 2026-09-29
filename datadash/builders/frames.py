@@ -8,13 +8,13 @@ FramesConstructor class for building Plotly animation frames from TraceConstruct
 This separates frame construction logic from the main figure building.
 """
 
-from typing import Dict, List, Any, Optional
+import logging
+from typing import Dict, List
+
 import numpy as np
 import plotly.graph_objects as go
-import logging
 
-from .trace import TraceConstructor
-from .trace import TraceBuilder
+from .trace import TraceBuilder, TraceConstructor
 
 
 class FramesConstructor:
@@ -118,7 +118,7 @@ class FramesConstructor:
 
     def _prepare_static_traces(self):
         """Prepare static traces for the first frame."""
-        for key, constructor in self.static_constructors.items():
+        for constructor in self.static_constructors.values():
             template = self.builder.build_trace(constructor).to_plotly_json()
             self.static_frame_traces.append(template)
 
@@ -168,11 +168,9 @@ class FramesConstructor:
                 ordered_traces[template_info["trace_index"]] = trace_dict
 
         # Place static traces
-        static_idx = 0
-        for key, constructor in self.static_constructors.items():
+        for static_idx, key in enumerate(self.static_constructors):
             trace_index = self.trace_indices[key]
             ordered_traces[trace_index] = self.static_frame_traces[static_idx]
-            static_idx += 1
 
         return ordered_traces
 

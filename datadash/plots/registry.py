@@ -6,9 +6,10 @@
 """Plot registry for declarative plot definitions."""
 
 from __future__ import annotations
-from typing import Callable, Dict, List, Optional, Any
-from dataclasses import dataclass
+
 import logging
+from dataclasses import dataclass
+from typing import Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 

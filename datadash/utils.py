@@ -2,7 +2,7 @@ import itertools
 
 
 def interleave(*a):
-    return tuple(itertools.chain.from_iterable(tuple(zip(*a))))
+    return tuple(itertools.chain.from_iterable(tuple(zip(*a, strict=False))))
 
 
 def tile(a, n):

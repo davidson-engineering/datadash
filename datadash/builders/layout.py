@@ -5,8 +5,8 @@
 
 import logging
 
-from .trace import get_plot_range
 from ..themes.manager import get_theme_manager
+from .trace import get_plot_range
 
 # =============================================================================
 # PLOT LAYOUT BUILDERS - For individual plot layouts
