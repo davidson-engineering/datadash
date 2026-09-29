@@ -122,10 +122,17 @@
     font-display: swap;
 }
 
-/* ProFont Nerd Font */
+/* ProFont Nerd Font
+   The IIx files map some printable characters to empty glyphs, including
+   U+2212 MINUS SIGN (Plotly's negative sign, so -4 rendered as 4) and the
+   superscripts in unit labels (m·s⁻² rendered as m·s⁻). unicode-range leaves
+   those out so the browser takes them from the next font in the stack. */
 @font-face {
     font-family: 'ProFontNerdFont';
     src: url('./fonts/ProFont/ProFontIIxNerdFont-Regular.ttf') format('truetype');
+    unicode-range:
+        U+0000-00A5, U+00A7-00B1, U+00B4-00B8, U+00BA-00BB, U+00BF-00CF, U+00D1-00DC, U+00DF-00EF, U+00F1-00FD, U+00FF-0140, U+0143-015F, U+0162-017C, U+017F-2211,
+        U+2213-FB00, U+FB03-10FFFF;
     font-weight: 400;
     font-style: normal;
     font-display: swap;
@@ -134,6 +141,9 @@
 @font-face {
     font-family: 'ProFontNerdFontMono';
     src: url('./fonts/ProFont/ProFontIIxNerdFontMono-Regular.ttf') format('truetype');
+    unicode-range:
+        U+0000-00A5, U+00A7-00B1, U+00B4-00B8, U+00BA-00BB, U+00BF-00CF, U+00D1-00DC, U+00DF-00EF, U+00F1-00FD, U+00FF-0140, U+0143-015F, U+0162-017C, U+017F-2211,
+        U+2213-FB00, U+FB03-10FFFF;
     font-weight: 400;
     font-style: normal;
     font-display: swap;
@@ -142,6 +152,9 @@
 @font-face {
     font-family: 'ProFontNerdFontPropo';
     src: url('./fonts/ProFont/ProFontIIxNerdFontPropo-Regular.ttf') format('truetype');
+    unicode-range:
+        U+0000-00A5, U+00A7-00B1, U+00B4-00B8, U+00BA-00BB, U+00BF-00CF, U+00D1-00DC, U+00DF-00EF, U+00F1-00FD, U+00FF-0140, U+0143-015F, U+0162-017C, U+017F-2211,
+        U+2213-FB00, U+FB03-10FFFF;
     font-weight: 400;
     font-style: normal;
     font-display: swap;

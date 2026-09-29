@@ -25,12 +25,13 @@ fonts:
 icons:
   tabs:
     robot-overview: "󰚩"
-    actuator-dynamics: ""
+    actuator-dynamics: "󰥛"
     actuator-loads: "󰒓"
     end-effector-trajectory-spatial: "󰍉"
     joint-trajectories: "󰓫"
     end-effector-trajectory: "󰁰"
-    summary-specifications: ""
+    summary-specifications: "󱃔"
+    parameter-sweep: "󰺒"
     results-table: "󰕮"
     job-selector: "󰮔"
 
@@ -103,6 +104,9 @@ styles:
     background: "linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 100%)"
     minHeight: "100vh"
     fontFamily: *monospace
+    # Plain text (section headings, notices) otherwise inherits Bootstrap's
+    # dark body color, which is unreadable on this background
+    color: "#88ccff"
 
   footer:
     textAlign: "center"
@@ -112,6 +116,22 @@ styles:
     borderTop: "1px solid #334155"
     fontFamily: *monospace
     fontSize: "0.85rem"
+
+  # Without these the tables inherit the default theme's light background
+  table_container:
+    background: "#1a1f2e"
+
+  table_header:
+    backgroundColor: "#2a3441"
+    color: "#00ff88"
+    fontFamily: *monospace
+    borderBottom: "1px solid #334155"
+
+  table_cell:
+    backgroundColor: "#1a1f2e"
+    color: "#88ccff"
+    fontFamily: *monospace
+    borderBottom: "1px solid #334155"
 
 plotly:
   layout:

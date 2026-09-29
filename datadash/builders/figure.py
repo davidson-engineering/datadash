@@ -545,12 +545,10 @@ class SubplotsFigure(PlotFigure):
         builder = TraceBuilder()
 
         traces_data = []
-        for data in self.trace_constructor["data"]:
-            # Convert to TraceConstructor if needed
-            if not isinstance(data, TraceConstructor):
-                constructor = self._convert_legacy_constructor(data)
-            else:
-                constructor = data
+        constructors = self.trace_constructor["data"]
+        if isinstance(constructors, dict):
+            constructors = constructors.values()
+        for constructor in constructors:
 
             # Check if layout has showlegend=False and apply to individual traces
             if hasattr(constructor.properties, "copy"):
