@@ -4,10 +4,9 @@
 # Davidson Engineering Ltd. © 2023
 
 import datetime
-import dash
-from dash import html, dash_table, dcc
+
 import dash_bootstrap_components as dbc
-import pandas as pd
+from dash import dash_table, dcc, html
 from mergedeep import merge
 
 from ..themes.manager import get_theme_manager
@@ -15,44 +14,68 @@ from ..themes.manager import get_theme_manager
 CURRENT_YEAR = datetime.datetime.now().year
 
 
-def construct_dash_table(table):
+# Enough precision for any engineering value, few enough digits to drop binary
+# float noise (0.16499999999999998 -> 0.165) that would otherwise be displayed
+TABLE_SIGNIFICANT_DIGITS = 10
 
+
+def _clean_float(value):
+    """Round floats to TABLE_SIGNIFICANT_DIGITS; leave every other value untouched."""
+    if isinstance(value, float):
+        return float(f"{value:.{TABLE_SIGNIFICANT_DIGITS}g}")
+    return value
+
+
+def _is_numeric(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _column_alignment(rows, column):
+    """Right-align mostly-numeric columns, left-align text columns.
+
+    Decided by majority, so a numeric column with the odd text entry (a model
+    name among dimensions, say) still lines its numbers up.
+    """
+    values = [row.get(column) for row in rows if row.get(column) not in (None, "")]
+    numeric = sum(_is_numeric(v) for v in values)
+    return "right" if values and numeric * 2 >= len(values) else "left"
+
+
+def construct_dash_table(table, table_id="table", max_width=None):
+    """Render a DataFrame as a themed DataTable.
+
+    Numeric columns are right-aligned and text columns left-aligned, decided from
+    the data rather than from column names. The table scrolls inside a container
+    capped at the theme's max height, with the header row pinned while scrolling.
+
+    Args:
+        table: DataFrame (or DataFrame-like with ``columns`` and ``to_dict``)
+        table_id: Component id; must be unique within the page
+        max_width: Optional CSS max-width, to keep narrow tables (few columns)
+            from stretching their values far away from their labels
+    """
     theme = get_theme_manager()
 
-    # Get base style but override problematic sizing properties
-    default_style = theme.get_component_style("table_container").copy()
-    # Remove problematic flex and overflow properties that can cause resize loops
-    default_style.pop("flex", None)
-    default_style.pop("overflow-y", None)
-    # Set explicit height instead of flexible sizing
-    if "height" not in default_style:
-        default_style["height"] = "600px"
+    columns = [{"name": col, "id": col} for col in table.columns]
+    data = table.to_dict("records")
+    data = [{k: _clean_float(v) for k, v in row.items()} for row in data]
 
-    if isinstance(table, pd.DataFrame):
-        # Create proper column definitions for DataTable
-        columns = [{"name": col, "id": col} for col in table.columns]
-        data = table.to_dict("records")
-    else:
-        try:
-            columns = [{"name": col, "id": col} for col in table.columns]
-            data = (
-                table.to_dict("records") if hasattr(table, "to_dict") else table.values
-            )
-        except AttributeError as e:
-            raise e
-
+    header_style = theme.get_component_style("table_header")
     return dash_table.DataTable(
-        id="table",
+        id=table_id,
         columns=columns,
         data=data,
+        style_cell=theme.get_component_style("table_cell"),
         style_cell_conditional=[
-            {"if": {"column_id": "parameter"}, "textAlign": "left"},
-            {"if": {"column_id": "metric"}, "textAlign": "left"},
-            {"if": {"column_id": "unit"}, "textAlign": "center"},
-            {"if": {"column_id": "value"}, "textAlign": "center"},
+            {"if": {"column_id": col["id"]}, "textAlign": _column_alignment(data, col["id"])}
+            for col in columns
         ],
-        style_header={"backgroundColor": "rgb(230, 230, 230)", "fontWeight": "bold"},
-        style_table={**default_style, "overflowY": "auto"},
+        # Sticky within the table's own scroll container
+        style_header={**header_style, "position": "sticky", "top": 0, "zIndex": 1},
+        style_table={
+            **theme.get_component_style("table_container"),
+            **({"maxWidth": max_width} if max_width else {}),
+        },
         page_action="none",
     )
 
@@ -71,10 +94,13 @@ def create_tabs(children, id="dashboard", value="actuator-dynamics", style=None)
         value=value,
         children=children,
         style=style,
+        # dcc.Tabs stacks tabs vertically below 800px by default, which overflowed
+        # the header. The theme's tab bar wraps onto extra rows instead.
+        mobile_breakpoint=0,
     )
 
 
-def create_graph_component(graph_id, figure, width="auto", style=None, config=None):
+def create_graph_component(graph_id, figure, width=12, style=None, config=None):
 
     theme = get_theme_manager()
 
@@ -196,80 +222,79 @@ def create_job_selector_dropdown(job_options, current_job_id=None):
     )
 
 
-def create_parameter_filter_dropdowns(sweep_analyzer, current_job_id=None):
+def parameter_filter_container_style():
+    """Style for the parameter filter container.
+
+    Shared by the initial render and any callback that toggles its visibility, so
+    showing it again restores exactly the same layout.
+    """
+    return get_theme_manager().get_component_style("dropdown-container")
+
+
+def _default_parameter_format(param):
+    """Show the raw parameter name, and values to 3 decimal places."""
+    return param, lambda value: f"{value:.3f}" if _is_numeric(value) else str(value)
+
+
+def create_parameter_filter_dropdowns(sweep_analyzer, current_job_id=None, formatter=None):
     """Create filter dropdowns for each swept parameter to narrow down job selection.
 
     Args:
         sweep_analyzer: SweepAnalyzer instance with parameter sweep data
         current_job_id: Currently selected job ID
+        formatter: Optional ``param -> (label, format_value)``, where
+            ``format_value(value) -> str`` renders an option. Option values stay
+            raw, so callbacks receive the original data.
 
     Returns:
-        Container with parameter filter dropdowns in a grid layout (4 per row)
+        Container with one dropdown per swept parameter, laid out responsively
     """
     theme = get_theme_manager()
-
-    dropdown_container_style = theme.get_component_style("dropdown-container") or {}
-    dropdown_style = theme.get_component_style("dropdown") or {}
+    formatter = formatter or _default_parameter_format
+    dropdown_style = theme.get_component_style("dropdown")
+    label_style = theme.get_component_style("dropdown-label")
 
     if not sweep_analyzer or sweep_analyzer.df.empty:
         return html.Div(id="job-selector-container", style={"display": "none"})
 
-    # Get swept parameters (those with multiple unique values)
     swept_params = sweep_analyzer.get_swept_parameters()
-
     if not swept_params:
         return html.Div(id="job-selector-container", style={"display": "none"})
 
-    # Get current parameter values if we have a selected job
     current_values = {}
     if current_job_id and current_job_id in sweep_analyzer.df.index:
         for param in swept_params:
             current_values[param] = sweep_analyzer.df.loc[current_job_id, param]
 
-    # Create a dropdown for each swept parameter with formatted values
-    dropdown_cols = []
+    columns = []
     for param in swept_params:
         param_values = sweep_analyzer.get_parameter_values(param)
-
-        # Format values to 3 decimal places
-        options = [
-            {"label": f"{val:.3f}" if isinstance(val, (int, float)) else str(val), "value": val}
-            for val in param_values
-        ]
-
-        # Use current value if available, otherwise use first option
+        label, format_value = formatter(param)
+        options = [{"label": format_value(val), "value": val} for val in param_values]
         value = current_values.get(param, param_values[0] if param_values else None)
 
-        # Create a column for each dropdown (3 columns per row = width 4)
-        dropdown_cols.append(
-            dbc.Col([
-                html.Label(param, style={"fontWeight": "bold", "marginBottom": "5px", "fontSize": "0.9em"}),
-                dcc.Dropdown(
-                    id={"type": "param-filter", "param": param},
-                    options=options,
-                    value=value,
-                    style=dropdown_style,
-                    clearable=False,
-                ),
-            ], width=3, style={"marginBottom": "15px"})
+        columns.append(
+            dbc.Col(
+                [
+                    html.Label(label, title=label, style=label_style),
+                    dcc.Dropdown(
+                        id={"type": "param-filter", "param": param},
+                        options=options,
+                        value=value,
+                        style=dropdown_style,
+                        clearable=False,
+                    ),
+                ],
+                # One per row on phones, then 2, 3, and all six in one row on wide screens
+                xs=12,
+                sm=6,
+                lg=4,
+                xxl=2,
+            )
         )
-
-    # Arrange dropdowns in rows of 4
-    rows = []
-    for i in range(0, len(dropdown_cols), 4):
-        rows.append(dbc.Row(dropdown_cols[i:i+4], justify="center", style={"marginBottom": "10px"}))
-
-    # Update container style to center content
-    centered_style = dropdown_container_style.copy() if dropdown_container_style else {}
-    centered_style.update({
-        "display": "flex",
-        "justifyContent": "center",
-        "alignItems": "center",
-        "flexDirection": "column",
-    })
 
     return html.Div(
         id="job-selector-container",
-        children=rows,
-        style=centered_style,
+        children=dbc.Row(columns, className="g-3", justify="center"),
+        style=parameter_filter_container_style(),
     )

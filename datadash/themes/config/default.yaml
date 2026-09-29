@@ -26,25 +26,25 @@ global-styles:
     # footer: &footer-shadow "0px -6px 10px 0px #000000 inset"
 
 fonts:
-  monospace: &monospace_font "'DroidSansMonoNerdFontMono, 'monospace'"
-  sans: &sans_font "'sans-serif'"
-  title: &title_font "'DroidSansMonoNerdFontPropo', 'Arial'"
-  tab: &tab_font "'DroidSansMonoNerdFontPropo', 'Arial'"
-  body: &body_font "'DroidSansMonoNerdFontPropo', 'Arial'"
-  plots: &plots_font "DroidSansMonoNerdFontPropo"
-  footer: &footer_font "'DroidSansMonoNerdFontPropo', 'monospace'"
-  table: &table_font "'DroidSansMonoNerdFontPropo', 'monospace'"
-  hoverlabels: &hoverlabels_font "DroidSansMonoNerdFontPropo"
-  dropdown: &dropdown_font "'Arial'"
+  monospace: &monospace_font "'DroidSansMonoNerdFontMono', monospace"
+  sans: &sans_font "sans-serif"
+  title: &title_font "'DroidSansMonoNerdFontPropo', monospace"
+  tab: &tab_font "'DroidSansMonoNerdFontPropo', monospace"
+  body: &body_font "'DroidSansMonoNerdFontPropo', monospace"
+  plots: &plots_font "DroidSansMonoNerdFontPropo, monospace"
+  footer: &footer_font "'DroidSansMonoNerdFontPropo', monospace"
+  table: &table_font "'DroidSansMonoNerdFontPropo', monospace"
+  hoverlabels: &hoverlabels_font "DroidSansMonoNerdFontPropo, monospace"
+  dropdown: &dropdown_font "'DroidSansMonoNerdFontPropo', monospace"
 
 icons:
   tabs:
     robot-overview: ""
     actuator-dynamics: ""
     actuator-loads: ""
-    end-affector-trajectory-spatial: ""
+    end-effector-trajectory-spatial: ""
     joint-trajectories: ""
-    end-affector-trajectory: ""
+    end-effector-trajectory: ""
     summary-specifications: ""
     results-table: ""
     job-selector: ""
@@ -53,54 +53,57 @@ styles:
   header:
     textAlign: center
     fontFamily: *title_font
-    fontSize: 2.5rem
+    fontSize: "clamp(1.5rem, 4vw, 2.5rem)"
     fontWeight: 600
     color: *color_text_primary
-    height: 80px
+    padding: "1rem 1rem 0.5rem"
     flex-shrink: 0
     background: *color_secondary_bg
-    align-content: center
     margin-bottom: 0px
     text-transform: unset
-    letter-spacing: 0.8rem
+    letter-spacing: "clamp(0.2rem, 1.2vw, 0.8rem)"
 
-  tab:
+  tab: &tab_style
     background: *color_primary_bg
     color: *color_text_secondary
-    border: *border_style
+    # Longhand border properties: mixing the `border` shorthand with the
+    # selected tab's `borderColor` made React drop the colour, so dcc's own tab
+    # CSS showed through (a dark right edge on inactive tabs).
+    borderWidth: 1.25px
+    borderStyle: solid
+    borderColor: *color_border
     borderRadius: 18px
     padding: "0.5rem 1rem"
     fontFamily: *tab_font
     fontWeight: 500
-    fontSize: 1em
+    fontSize: 1rem
     display: "flex"
     alignItems: center
     justifyContent: center
+    textAlign: center
     lineHeight: 1.25
-    maxWidth: 80%
-    
+    minHeight: "3.5rem"
+    # Wide enough for "END EFFECTOR" on one line, so labels wrap to at most two
+    # lines; never narrower than the longest single word ("SPECIFICATIONS").
+    flex: "1 0 10rem"
+    minWidth: "min-content"
+    maxWidth: "12rem"
+
   tab_selected:
-    background: *color_accent 
-    fontFamily: *tab_font
-    borderRadius: 18px
-    border: *border_style
-    fontWeight: 700
-    fontSize: 1rem
+    <<: *tab_style
+    background: *color_accent
+    borderColor: *color_accent
     color: "#ffffff"
-    display: "flex"
-    alignItems: "center"
-    justifyContent: "center"
-    lineHeight: 1.25
-    maxWidth: 80%
-    background: *color_accent 
-    
+
   tab_container:
     background: *color_secondary_bg
     margin: 0rem
-    padding: 0rem 4rem 0.5rem
-    gap: 1.5rem
+    padding: "0.25rem 1rem 0.75rem"
+    gap: 0.75rem
+    display: flex
+    # Wrap onto further rows when the tabs don't fit, so every tab stays visible
+    flexWrap: wrap
     justifyContent: center
-    height: 60px
     flex-shrink: 0
     border-bottom: *border_style
 
@@ -117,9 +120,11 @@ styles:
   main_container:
     background: *color_primary_bg
     flex: 1 0 auto
-    padding: 0rem
+    width: 100%
+    maxWidth: 1680px
+    margin: "0 auto"
+    padding: "1.5rem 1.5rem 2rem"
     overflow-x: hidden
-    overflow-y: auto
     flex-direction: column
 
   graph_container:
@@ -135,18 +140,34 @@ styles:
 
   table_container:
     background: *color_primary_bg
-    flex: 1 1 auto
-    overflow-y: auto
-    gap: 0rem;
-    width: 100%;
-    max-width: 1200px;
-    min-width: 600px;
+    width: 100%
+    maxWidth: 1200px
+    margin: "0 auto"
+    maxHeight: 70vh
+    overflowY: auto
+    # Wide tables scroll inside their container on narrow screens, not the page
+    overflowX: auto
     
+  table_header:
+    backgroundColor: *color_secondary_bg
+    color: *color_text_primary
+    fontFamily: *table_font
+    fontWeight: 600
+    padding: "0.5rem 0.75rem"
+    border: "none"
+    borderBottom: *border_style
+
+  table_cell:
+    fontFamily: *table_font
+    color: *color_text_primary
+    padding: "0.35rem 0.75rem"
+    border: "none"
+    borderBottom: *dropdown_border
+    whiteSpace: normal
+    height: auto
+
   footer:
-    # position: fixed;
-    # bottom: 0;
-    # left: 0;
-    width: 100%;
+    width: 100%
     textAlign: center
     padding: 1rem
     background: *color_secondary_bg
@@ -155,8 +176,6 @@ styles:
     fontFamily: *footer_font
     fontWeight: 400
     fontSize: 1.2rem
-    height: 60px
-    z-index: 9999
     lineHeight: 1.25
     flex-shrink: 0
     # box-shadow: *footer-shadow
@@ -164,11 +183,21 @@ styles:
   dropdown-container:
     color: *color_text_primary
     background: *color_primary_bg
-    minWidth: 200px
-    display: "block"
-    padding: "1rem 8% 0rem"
-    height: auto  # Let it size naturally
+    width: 100%
+    maxWidth: 1680px
+    margin: "0 auto"
+    padding: "1rem 1.5rem 0"
     flex-shrink: 0
+
+  dropdown-label:
+    display: block
+    fontSize: 0.85rem
+    fontWeight: 500
+    color: *color_text_secondary
+    marginBottom: 0.25rem
+    whiteSpace: nowrap
+    overflow: hidden
+    textOverflow: ellipsis
 
   dropdown:
     background: *color_secondary_bg
@@ -186,13 +215,25 @@ plotly:
       size: 14
       color: *color_text_primary
     autosize: True
+    # Title and legend positions are fixed in pixels from the top (via the top
+    # margin) rather than as a fraction of figure height, so titles line up
+    # across a row of charts.
     title:
-      y: 0.9
+      yref: container
+      y: 0.98
       x: 0.5
       xanchor: center
       yanchor: top
-    # colorway: ["#007bff", "#28a745", "#dc3545", "#ffc107", "#17a2b8", "#6f42c1", "#e83e8c", "#fd7e14"]
-    # margin: {l: 60, r: 60, t: 60, b: 60}
+    margin: {l: 70, r: 70, t: 76, b: 60}
+    legend:
+      orientation: h
+      x: 0.5
+      xanchor: center
+      y: 1.02
+      yanchor: bottom
+      font:
+        size: 12
+      bgcolor: "rgba(0,0,0,0)"
     xaxis:
       gridcolor: "#dee2e6"
       color: *color_text_primary
@@ -220,7 +261,7 @@ plotly:
         weight: 400
     yaxis2:
       zeroline: False
-    showlegend: False
+    showlegend: True
     scene:
       xaxis:
         gridcolor: "#dee2e6"
@@ -281,7 +322,7 @@ plotly:
         colorscale: "Viridis"
         size: 4
         # symbol: x
-        colorbar: {"title": "Velocity [m/s]"}
+        colorbar: {"title": "Velocity [m·s<sup>-1</sup>]"}
         
 
 

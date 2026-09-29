@@ -4,16 +4,14 @@
 # Davidson Engineering Ltd. © 2023
 
 from __future__ import annotations
-from abc import ABC
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+
 import numpy as np
-import numpy.typing as npt
+import plotly.graph_objects as go
 from mergedeep import merge
+from plotly.subplots import make_subplots
 
 from ..themes.manager import get_theme_manager
 from .trace import TraceConstructor
-from ..utils import tile
 
 
 def compute_ranges(*data: list[np.ndarray], margins=None):
@@ -30,7 +28,9 @@ def compute_ranges(*data: list[np.ndarray], margins=None):
 
     if margins is None:
         return tuple(get_range(axis, 0.0) for axis in data)
-    return tuple(get_range(axis, margin) for axis, margin in zip(data, margins))
+    return tuple(
+        get_range(axis, margin) for axis, margin in zip(data, margins, strict=False)
+    )
 
 
 def compute_scene_ranges(data, margins=None):
@@ -226,7 +226,7 @@ class PlotFigure:
         )
         patterned_properties = {}
         for lookup in lookups:
-            for k, v in properties.items():
+            for k in properties:
                 if k.startswith(lookup) and not k.endswith(exclusions):
                     patterned_properties[k] = lookin[lookup]
         return merge(
@@ -273,7 +273,7 @@ class PlotFigure:
             subplot_fig.add_trace(trace, secondary_y=False)
 
         # Add secondary traces (scaled and hidden)
-        for key, trace in self.traces.items():
+        for trace in self.traces.values():
             # Create a copy of the trace for secondary axis
             # Use copy.deepcopy for a robust solution that works with all trace types
             import copy
@@ -297,6 +297,7 @@ class PlotFigure:
             # Update properties for secondary axis
             secondary_trace.name = f"{trace.name}_{units}"
             secondary_trace.visible = False  # Hidden by default
+            secondary_trace.showlegend = False
 
             # Scale the y-data
             if hasattr(secondary_trace, "y") and secondary_trace.y is not None:
@@ -385,26 +386,19 @@ class PlotFigure:
         # Layout cache can still be reused
 
     def _fast_layout_merge(self, target, source):
-        """Fast layout merging that minimizes Plotly's internal processing.
+        """Fill in theme defaults that the figure's own layout doesn't set.
 
-        Uses simple dict updates for top-level properties and selective merging
-        for nested properties to reduce the complexity that Plotly needs to process.
+        The theme only supplies defaults: any key the figure sets wins, so a plot
+        can override the theme (e.g. hide the legend on a single-trace plot).
+        Nested dicts are filled recursively so a partial override such as
+        ``xaxis.range`` keeps the theme's other axis styling.
         """
         for key, value in source.items():
-            if (
-                key in target
-                and isinstance(target[key], dict)
-                and isinstance(value, dict)
-            ):
-                # Only deep merge for specific nested objects
-                if key in ["xaxis", "yaxis", "scene", "font"]:
-                    target[key].update(value)
-                else:
-                    # Simple replacement for other nested objects to reduce deep copying
-                    target[key] = value
-            else:
-                # Simple assignment for top-level properties
+            if key not in target:
                 target[key] = value
+            elif isinstance(target[key], dict) and isinstance(value, dict):
+                target[key] = dict(target[key])
+                self._fast_layout_merge(target[key], value)
 
     def _simplify_layout_for_plotly(self, layout):
         """Reduce layout complexity while preserving all essential formatting."""
@@ -414,7 +408,7 @@ class PlotFigure:
 
         for key, value in layout.items():
             if isinstance(value, dict) and key in ["xaxis", "yaxis", "scene"]:
-                # Make shallow copies of axis objects to reduce deep copying while preserving all properties
+                # Shallow-copy axis objects: less deep copying, all properties kept
                 simplified[key] = value.copy()
             else:
                 # Copy other properties as-is
@@ -493,7 +487,7 @@ class PlotFigure3D(PlotFigure):
 
         # Merge in theme layout if defined
         if plotly_theme.get("layout"):
-            themed_layout = merge({}, current_layout, plotly_theme["layout"])
+            themed_layout = merge({}, plotly_theme["layout"], current_layout)
         else:
             themed_layout = current_layout
 
@@ -543,7 +537,7 @@ class PlotFigure3DAnimation(PlotFigure3D):
 
         # Merge in theme layout if defined
         if plotly_theme.get("layout"):
-            themed_layout = merge({}, current_layout, plotly_theme["layout"])
+            themed_layout = merge({}, plotly_theme["layout"], current_layout)
         else:
             themed_layout = current_layout
 
@@ -632,17 +626,18 @@ class SubplotsFigure(PlotFigure):
             units: Label for the secondary axis (e.g., "rpm", "deg/s")
             scale: Conversion factor from primary to secondary units
         """
-        from plotly.subplots import make_subplots
         import copy
+
+        from plotly.subplots import make_subplots
 
         # Get existing traces data
         traces_data = self.traces
 
         # Create new subplot figure with secondary y-axes for each subplot
         specs = []
-        for i in range(self.rows):
+        for _ in range(self.rows):
             row_specs = []
-            for j in range(self.cols):
+            for _ in range(self.cols):
                 row_specs.append({"secondary_y": True})
             specs.append(row_specs)
 
@@ -653,13 +648,13 @@ class SubplotsFigure(PlotFigure):
 
         # Add all existing traces to primary axes with their original positioning
         for trace, row, col in zip(
-            traces_data["data"], traces_data["rows"], traces_data["cols"]
+            traces_data["data"], traces_data["rows"], traces_data["cols"], strict=False
         ):
             subplot_fig.add_trace(trace, row=row, col=col, secondary_y=False)
 
         # Add secondary traces (scaled and hidden) for each subplot
         for trace, row, col in zip(
-            traces_data["data"], traces_data["rows"], traces_data["cols"]
+            traces_data["data"], traces_data["rows"], traces_data["cols"], strict=False
         ):
             # Create a copy of the trace for secondary axis
             try:
@@ -681,6 +676,7 @@ class SubplotsFigure(PlotFigure):
             # Update properties for secondary axis
             secondary_trace.name = f"{trace.name}_{units}"
             secondary_trace.visible = False  # Hidden by default
+            secondary_trace.showlegend = False
             secondary_trace.showlegend = False  # Show in legend for toggling
 
             # Scale the y-data
@@ -722,12 +718,6 @@ class SubplotsFigure(PlotFigure):
         Args:
             figure: The plotly figure to apply consistent grid settings to
         """
-        import numpy as np
-        from ..themes.manager import get_theme_manager
-
-        # Get theme settings for grid configuration
-        theme = get_theme_manager()
-        settings = theme.get_settings()
 
         # Grid configuration parameters
         grid_settings = {
@@ -799,7 +789,7 @@ class SubplotsFigure(PlotFigure):
                         col=j,
                         secondary_y=True,
                     )
-                except:
+                except Exception:
                     pass  # No secondary axis exists
 
     def _calculate_nice_tick_interval(self, data_range):
@@ -904,7 +894,7 @@ class SubplotsFigure(PlotFigure):
 
         # Add traces with proper subplot positioning
         for trace, row, col in zip(
-            traces_data["data"], traces_data["rows"], traces_data["cols"]
+            traces_data["data"], traces_data["rows"], traces_data["cols"], strict=False
         ):
             self.fig.add_trace(trace, row=row, col=col)
 

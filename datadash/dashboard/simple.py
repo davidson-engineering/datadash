@@ -63,11 +63,11 @@
 #                         create_themed_tab("ACTUATOR DYNAMICS", "actuator-dynamics"),
 #                         create_themed_tab("ACTUATOR LOADS", "actuator-loads"),
 #                         create_themed_tab(
-#                             "TRAJECTORY SPATIAL", "end-affector-trajectory-spatial"
+#                             "TRAJECTORY SPATIAL", "end-effector-trajectory-spatial"
 #                         ),
 #                         create_themed_tab("JOINT TRAJECTORIES", "joint-trajectories"),
 #                         create_themed_tab(
-#                             "END AFFECTOR TRAJECTORY", "end-affector-trajectory"
+#                             "END EFFECTOR TRAJECTORY", "end-effector-trajectory"
 #                         ),
 #                         create_themed_tab("SPECIFICATIONS", "summary-specifications"),
 #                         create_themed_tab("RESULTS", "results-table"),
@@ -120,9 +120,9 @@
 #         def render_content(tab):
 #             tab_mapping = {
 #                 "actuator-dynamics": self.tab_actuator_dynamics,
-#                 "end-affector-trajectory-spatial": self.tab_end_effector_trajectory_spatial,
+#                 "end-effector-trajectory-spatial": self.tab_end_effector_trajectory_spatial,
 #                 "joint-trajectories": self.tab_joint_trajectories,
-#                 "end-affector-trajectory": self.tab_end_effector_trajectory,
+#                 "end-effector-trajectory": self.tab_end_effector_trajectory,
 #                 "actuator-loads": self.tab_actuator_loads,
 #                 "summary-specifications": self.tab_summary_specifications,
 #                 "results-table": self.tab_results_table,

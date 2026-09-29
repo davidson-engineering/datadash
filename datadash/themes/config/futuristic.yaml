@@ -27,9 +27,9 @@ icons:
     robot-overview: "󰚩"
     actuator-dynamics: ""
     actuator-loads: "󰒓"
-    end-affector-trajectory-spatial: "󰍉"
+    end-effector-trajectory-spatial: "󰍉"
     joint-trajectories: "󰓫"
-    end-affector-trajectory: "󰁰"
+    end-effector-trajectory: "󰁰"
     summary-specifications: ""
     results-table: "󰕮"
     job-selector: "󰮔"
@@ -47,10 +47,12 @@ styles:
     margin: "2rem 0"
     letterSpacing: "0.1em"
   
-  tab:
+  tab: &tab_style
     background: "transparent"
     color: "#88ccff"
-    border: "1px solid #334155"
+    borderWidth: "1px"
+    borderStyle: "solid"
+    borderColor: "#334155"
     borderRadius: "8px"
     margin: "0 0.25rem"
     padding: "0.75rem 1.5rem"
@@ -63,6 +65,8 @@ styles:
     lineHeight: "1"
     
   tab_selected:
+    # Same box model as `tab`, so selecting a tab doesn't change its size
+    <<: *tab_style
     background: "linear-gradient(135deg, #2a3441, #1a1f2e)"
     color: "#00ff88"
     borderColor: "#00ff88"
