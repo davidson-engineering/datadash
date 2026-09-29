@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import copy
+
 import numpy as np
 import plotly.graph_objects as go
 from mergedeep import merge
@@ -112,6 +114,14 @@ def compute_plot_extents_animation(
         z_center + max_range / 2,
     )
     return x_range, y_range, z_range
+
+
+def copy_trace(trace):
+    """Return an independent copy of a Plotly trace."""
+    try:
+        return type(trace)(trace)
+    except Exception:
+        return copy.deepcopy(trace)
 
 
 class PlotFigure:
@@ -258,96 +268,53 @@ class PlotFigure:
 
         Creates hidden traces on the secondary axis that can be toggled in the legend.
 
+        The axis is added to the existing figure in place, with the same layout
+        ``make_subplots(specs=[[{"secondary_y": True}]])`` would produce. Rebuilding
+        the figure as a subplot and copying the themed layout into it costs about
+        70 ms per figure, because Plotly validates the copy property by property.
+
         Args:
             units: Label for the secondary axis (e.g., "rpm", "deg/s")
             scale: Conversion factor from primary to secondary units
+            title: Axis title shown before the units
         """
-        # Convert existing figure to subplot with secondary y-axis
         fig = self.figure
 
-        # Create new subplot figure with secondary y-axis
-        subplot_fig = make_subplots(specs=[[{"secondary_y": True}]])
-
-        # Add all existing traces to primary axis
-        for trace in fig.data:
-            subplot_fig.add_trace(trace, secondary_y=False)
-
-        # Add secondary traces (scaled and hidden)
+        secondary_traces = []
         for trace in self.traces.values():
-            # Create a copy of the trace for secondary axis
-            # Use copy.deepcopy for a robust solution that works with all trace types
-            import copy
-
-            try:
-                # First try using the trace type constructor directly
-                trace_type = type(trace)
-                if trace_type == go.Scatter:
-                    secondary_trace = go.Scatter(trace)
-                elif trace_type == go.Bar:
-                    secondary_trace = go.Bar(trace)
-                elif trace_type == go.Scattergl:
-                    secondary_trace = go.Scattergl(trace)
-                else:
-                    # Fallback to deep copy for other trace types
-                    secondary_trace = copy.deepcopy(trace)
-            except Exception:
-                # If constructor fails, use deep copy as fallback
-                secondary_trace = copy.deepcopy(trace)
-
-            # Update properties for secondary axis
+            secondary_trace = copy_trace(trace)
             secondary_trace.name = f"{trace.name}_{units}"
             secondary_trace.visible = False  # Hidden by default
             secondary_trace.showlegend = False
+            if getattr(secondary_trace, "y", None) is not None:
+                secondary_trace.y = np.asarray(secondary_trace.y) * scale
+            secondary_trace.update(xaxis="x", yaxis="y2")
+            secondary_traces.append(secondary_trace)
 
-            # Scale the y-data
-            if hasattr(secondary_trace, "y") and secondary_trace.y is not None:
-                secondary_trace.y = [y * scale for y in secondary_trace.y]
+        fig.update_traces(xaxis="x", yaxis="y")
+        fig.add_traces(secondary_traces)
 
-            subplot_fig.add_trace(secondary_trace, secondary_y=True)
-
-        # Set secondary axis range using overall range computation
-        # Get all secondary axis y-data (already scaled)
-        secondary_y_data = []
-        for trace in subplot_fig.data:
-            if (
-                hasattr(trace, "y")
-                and trace.y is not None
-                and getattr(trace, "yaxis", "y") == "y2"
-            ):
-                secondary_y_data.append(np.array(trace.y))
-
-        # Apply layout to the subplot figure
-        subplot_fig.update_layout(fig.layout)
-
+        axis_title = f"{title} [{units}]" if title else f"[{units}]"
+        yaxis2 = {
+            "anchor": "free",
+            "autoshift": True,
+            "overlaying": "y",
+            "side": "right",
+            "showgrid": False,  # Disable gridlines for secondary axis
+            "title": {"text": axis_title},
+        }
+        secondary_y_data = [
+            np.asarray(trace.y) for trace in secondary_traces if trace.y is not None
+        ]
         if secondary_y_data:
-            # Get margin from theme settings
-            theme = get_theme_manager()
-            margin = theme.get_settings().get("trace_margin", 0)
+            margin = get_theme_manager().get_settings().get("trace_margin", 0)
+            yaxis2["range"] = compute_overall_range(*secondary_y_data, margin=margin)
 
-            # Compute overall range for secondary axis data with margin
-            secondary_range = compute_overall_range(*secondary_y_data, margin=margin)
-
-            # Apply the computed range to secondary axis
-            subplot_fig.update_yaxes(range=secondary_range, secondary_y=True)
-
-        if title:
-            axis_title = f"{title} [{units}]"
-        else:
-            axis_title = f"[{units}]"
-
-        # Update axis labels and properties
-        subplot_fig.update_yaxes(
-            secondary_y=True,
-            title_text=axis_title,
-            anchor="free",
-            overlaying="y",
-            autoshift=True,
-            showgrid=False,  # Disable gridlines for secondary axis
+        fig.update_layout(
+            xaxis={"anchor": "y", "domain": [0.0, 0.94]},
+            yaxis={"anchor": "x", "domain": [0.0, 1.0]},
+            yaxis2=yaxis2,
         )
-
-        # Replace the figure property to return the subplot figure
-        self.figure = subplot_fig
-
         return self
 
     @property
@@ -624,10 +591,6 @@ class SubplotsFigure(PlotFigure):
             units: Label for the secondary axis (e.g., "rpm", "deg/s")
             scale: Conversion factor from primary to secondary units
         """
-        import copy
-
-        from plotly.subplots import make_subplots
-
         # Get existing traces data
         traces_data = self.traces
 
@@ -654,28 +617,10 @@ class SubplotsFigure(PlotFigure):
         for trace, row, col in zip(
             traces_data["data"], traces_data["rows"], traces_data["cols"], strict=False
         ):
-            # Create a copy of the trace for secondary axis
-            try:
-                # First try using the trace type constructor directly
-                trace_type = type(trace)
-                if trace_type == go.Scatter:
-                    secondary_trace = go.Scatter(trace)
-                elif trace_type == go.Bar:
-                    secondary_trace = go.Bar(trace)
-                elif trace_type == go.Scattergl:
-                    secondary_trace = go.Scattergl(trace)
-                else:
-                    # Fallback to deep copy for other trace types
-                    secondary_trace = copy.deepcopy(trace)
-            except Exception:
-                # If constructor fails, use deep copy as fallback
-                secondary_trace = copy.deepcopy(trace)
-
-            # Update properties for secondary axis
+            secondary_trace = copy_trace(trace)
             secondary_trace.name = f"{trace.name}_{units}"
             secondary_trace.visible = False  # Hidden by default
             secondary_trace.showlegend = False
-            secondary_trace.showlegend = False  # Show in legend for toggling
 
             # Scale the y-data
             if hasattr(secondary_trace, "y") and secondary_trace.y is not None:
@@ -699,9 +644,6 @@ class SubplotsFigure(PlotFigure):
                     col=j,
                     secondary_y=True,
                 )
-
-        # Apply consistent grid settings to all subplots
-        self._apply_consistent_grid_settings(subplot_fig)
 
         # Apply consistent grid settings to all subplots
         self._apply_consistent_grid_settings(subplot_fig)

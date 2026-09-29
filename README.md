@@ -15,7 +15,7 @@ it. On its own:
 pip install git+https://github.com/davidson-engineering/datadash.git
 ```
 
-Requires Python 3.13. Redis is optional (see [CACHING.md](CACHING.md)).
+Requires Python 3.13.
 
 ## Themes
 
@@ -66,8 +66,6 @@ fig = BasicPlotBuilder().create_plot(
   scaling; `EndEffectorSpatialPlots` produces the XZ, YZ, XY, and 3D views.
 - `PlotRegistry` (`plots/registry.py`) registers plot functions by id with a
   decorator, so an app can look plots up by name.
-- `create_plot(..., plot_id=...)` caches the figure in Redis; see
-  [CACHING.md](CACHING.md).
 
 ## Dashboard components
 
@@ -95,6 +93,3 @@ From the robot-dashboard workspace root:
 ```bash
 uv run pytest src/datadash/tests
 ```
-
-When you change figure layout or styling, bump `FIGURE_CACHE_VERSION` in
-`builders/figure_cache.py` so cached figures from the old code are not served.

@@ -4,10 +4,12 @@
 # Davidson Engineering Ltd. © 2023
 
 from __future__ import annotations
-from typing import Dict, List, Any, Optional, Union, Tuple
+
 from abc import ABC, abstractmethod
-import numpy as np
+from typing import Any, Dict, List, Optional, Tuple
+
 import matplotlib.colors as mcolors
+import numpy as np
 
 
 class ColorPalette(ABC):

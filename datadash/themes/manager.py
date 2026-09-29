@@ -4,10 +4,12 @@
 # Davidson Engineering Ltd. © 2023
 
 from __future__ import annotations
-from typing import Dict, Any, Tuple
+
 from pathlib import Path
-from mergedeep import merge
+from typing import Any, Dict, Tuple
+
 import yaml
+from mergedeep import merge
 
 # Import palette system
 from .palettes import get_palette_registry
@@ -476,7 +478,9 @@ class ThemeManager:
             ],
             "available_themes": self._list_available_themes(),
             "palette_assignments": self.list_available_palettes(),
-            "override_info": "All override values take absolute priority over theme and palette colors",
+            "override_info": (
+                "All override values take absolute priority over theme and palette colors"
+            ),
         }
 
     def _list_available_themes(self) -> list[str]:
@@ -504,8 +508,14 @@ class ThemeManager:
         """
         return {
             "_info": "Theme Override Configuration Template",
-            "_priority": "All values in this configuration have the highest priority and override theme settings",
-            "_palette_info": "Palette colors are only applied when no explicit colors are set at any theme level",
+            "_priority": (
+                "All values in this configuration have the highest priority and"
+                " override theme settings"
+            ),
+            "_palette_info": (
+                "Palette colors are only applied when no explicit colors are set at"
+                " any theme level"
+            ),
             "plotly": {
                 "layout": {
                     "paper_bgcolor": "#ffffff",
