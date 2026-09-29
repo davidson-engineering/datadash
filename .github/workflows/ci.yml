@@ -25,7 +25,7 @@ jobs:
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v7
-    - uses: astral-sh/setup-uv@v10
+    - uses: astral-sh/setup-uv@v10.2.0
       with:
         enable-cache: true
     - name: Install from the lock file
@@ -41,7 +41,7 @@ jobs:
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v7
-    - uses: astral-sh/setup-uv@v10
+    - uses: astral-sh/setup-uv@v10.2.0
     - name: Install the newest allowed versions
       run: uv sync --upgrade
     - name: Test
