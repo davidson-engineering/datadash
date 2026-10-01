@@ -166,6 +166,17 @@ styles:
     whiteSpace: normal
     height: auto
 
+  # The caption over each section of a table (construct_dash_table's group_by).
+  # Bootstrap pads captions above and below, and greys them out
+  table_section:
+    fontFamily: *table_font
+    color: *color_text_primary
+    fontWeight: 600
+    textAlign: left
+    margin: "1.5rem 0 0.5rem"
+    paddingTop: 0
+    paddingBottom: 0
+
   footer:
     width: 100%
     textAlign: center

@@ -36,24 +36,40 @@ def _column_alignment(rows, column):
     return "right" if values and numeric * 2 >= len(values) else "left"
 
 
-def construct_dash_table(table, table_id="table", max_width=None, cell_style=None):
+# Of a table container's style, what each section of a sectioned table takes for
+# the pane it scrolls down in, as the container would; the grid of sections takes
+# the rest, its place on the page and its sideways scrolling
+_PANE_STYLES = ("height", "maxHeight", "overflowY", "background", "backgroundColor")
+
+
+def construct_dash_table(table, table_id="table", max_width=None, cell_style=None, group_by=None):
     """Render a DataFrame as a themed, read-only HTML table.
 
     Numeric columns are right-aligned and text columns left-aligned, decided from
     the data rather than from column names. The table scrolls inside a container
     capped at the theme's max height, with the header row pinned while scrolling.
 
+    With ``group_by``, the rows fall into sections by that column's values, in the
+    order the values first appear, and the column itself is not shown. Each section
+    is a table of its own, captioned with its value, that scrolls down in a pane of
+    its own with its header row pinned. The sections share one grid of columns, each
+    a CSS subgrid of it, so their columns line up whatever each section holds, and
+    they scroll sideways together.
+
     Args:
         table: DataFrame (or DataFrame-like with ``columns`` and ``to_dict``)
-        table_id: Id of the scroll container; must be unique within the page
+        table_id: Id of the scroll container (with ``group_by``, of the grid of
+            sections); must be unique within the page
         max_width: Optional CSS max-width, to keep narrow tables (few columns)
             from stretching their values far away from their labels
         cell_style: Optional CSS applied to every cell, header included, over
             the theme's styles (e.g. ``{"whiteSpace": "nowrap"}``)
+        group_by: Optional name of the column whose values section the rows.
+            Captions are themed as ``table_section``
     """
     theme = get_theme_manager()
 
-    columns = list(table.columns)
+    columns = [col for col in table.columns if col != group_by]
     rows = [{k: _clean_float(v) for k, v in row.items()} for row in table.to_dict("records")]
     alignment = {col: _column_alignment(rows, col) for col in columns}
 
@@ -76,6 +92,18 @@ def construct_dash_table(table, table_id="table", max_width=None, cell_style=Non
 
     header_styles = {col: {**header_style, "textAlign": alignment[col]} for col in columns}
     body_styles = {col: {**body_style, "textAlign": alignment[col]} for col in columns}
+    container_style = {
+        **theme.get_component_style("table_container"),
+        **({"maxWidth": max_width} if max_width else {}),
+    }
+
+    if group_by is not None:
+        sections = {}
+        for row in rows:
+            sections.setdefault(row[group_by], []).append(row)
+        return _sectioned_table(
+            sections, columns, header_styles, body_styles, container_style, table_id
+        )
 
     header = html.Tr([html.Th(col, style=header_styles[col]) for col in columns])
     body = [html.Tr([html.Td(row[col], style=body_styles[col]) for col in columns]) for row in rows]
@@ -85,9 +113,63 @@ def construct_dash_table(table, table_id="table", max_width=None, cell_style=Non
     return html.Div(
         html.Table([html.Thead(header), html.Tbody(body)], style=table_style),
         id=table_id,
+        style=container_style,
+    )
+
+
+def _sectioned_table(sections, columns, header_styles, body_styles, container_style, table_id):
+    """construct_dash_table's tables, one per section, on one grid of columns.
+
+    The grid lays the cells out, not the tables, so each element says what part
+    of a table it is to assistive technology.
+    """
+    theme = get_theme_manager()
+    contents = {"display": "contents"}
+
+    def row(cells):
+        return html.Tr(cells, role="row", style=contents)
+
+    def section_table(title, section):
+        header = row(
+            [html.Th(col, role="columnheader", style=header_styles[col]) for col in columns]
+        )
+        body = [
+            row([html.Td(r[col], role="cell", style=body_styles[col]) for col in columns])
+            for r in section
+        ]
+        # Across the grid, but only as wide as its text, which stays in view as the
+        # sections scroll sideways
+        caption = html.Caption(
+            title,
+            style={
+                "gridColumn": "1 / -1",
+                "justifySelf": "start",
+                "position": "sticky",
+                "left": 0,
+                **theme.get_component_style("table_section"),
+            },
+        )
+        # The pane the section scrolls down in, its header row first, pinned
+        # within it. As a subgrid, it takes its columns from the grid.
+        pane = html.Tbody(
+            [header, *body],
+            role="rowgroup",
+            style={
+                "gridColumn": "1 / -1",
+                "display": "grid",
+                "gridTemplateColumns": "subgrid",
+                **{k: v for k, v in container_style.items() if k in _PANE_STYLES},
+            },
+        )
+        return html.Table([caption, pane], role="table", style=contents)
+
+    return html.Div(
+        [section_table(title, section) for title, section in sections.items()],
+        id=table_id,
         style={
-            **theme.get_component_style("table_container"),
-            **({"maxWidth": max_width} if max_width else {}),
+            "display": "grid",
+            "gridTemplateColumns": f"repeat({len(columns)}, auto)",
+            **{k: v for k, v in container_style.items() if k not in _PANE_STYLES},
         },
     )
 
