@@ -133,6 +133,10 @@ styles:
     fontFamily: *monospace
     borderBottom: "1px solid #334155"
 
+  table_section:
+    color: "#00ff88"
+    fontFamily: *monospace
+
 plotly:
   layout:
     paper_bgcolor: "#0a0e1a"
