@@ -238,12 +238,21 @@ class ThemeManager:
         self._plotly_theme_cache = plotly_theme
         return plotly_theme
 
-    def get_trace_theme(self, trace_name: str) -> Dict[str, Any]:
-        """Get trace-specific theme configuration"""
+    def get_trace_theme(self, trace_name: str, default: str = "default") -> Dict[str, Any]:
+        """Get trace-specific theme configuration, merged over the trace defaults.
+
+        Args:
+            trace_name: The trace's theme key
+            default: The theme key of the defaults it is merged over: "default"
+                for lines and markers, "mesh" for meshes
+
+        Returns:
+            The trace's theme, or None if the theme has no entry for trace_name
+        """
         trace_themes = self.get_plotly_theme().get("traces", {})
         trace_theme = trace_themes.get(trace_name, None)
         if trace_theme:
-            defaults = trace_themes.get("default", {})
+            defaults = trace_themes.get(default, {})
             return merge({}, defaults, trace_theme)
         return None
 

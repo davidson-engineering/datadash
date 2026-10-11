@@ -89,6 +89,13 @@ fig = BasicPlotBuilder().create_plot(
   scaling; `EndEffectorSpatialPlots` produces the XZ, YZ, XY, and 3D views.
   They are imported from `datadash.builders.plot` and are not in `__all__`
   yet, so they may still change between minor versions.
+- `PlotFigure3DAnimation` (`builders/figure.py`) animates trace constructors
+  (`create_trace_constructor`, `builders/trace.py`), whose points, of shape
+  (points, time, space), move from frame to frame. Given `faces`, triangles as
+  indices into its points of shape (F, 3), a constructor is a mesh: it is drawn
+  as a `Mesh3d`, styled from the theme's `mesh` trace defaults (its lighting)
+  rather than the line and marker `default`, and after the first frame its
+  frames carry only its vertices, in single precision.
 - `PlotRegistry` (`plots/registry.py`) registers plot functions by id with a
   decorator, so an app can look plots up by name.
 
