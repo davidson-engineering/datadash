@@ -8,7 +8,7 @@ results dashboards on top of any computation.
 datadash is released as git tags. Pin one in your project:
 
 ```bash
-uv add "datadash @ git+https://github.com/davidson-engineering/datadash@v0.4.0"
+uv add "datadash @ git+https://github.com/davidson-engineering/datadash@v0.4.1"
 ```
 
 or in `pyproject.toml`:
@@ -18,7 +18,7 @@ or in `pyproject.toml`:
 dependencies = ["datadash"]
 
 [tool.uv.sources]
-datadash = { git = "https://github.com/davidson-engineering/datadash", tag = "v0.4.0" }
+datadash = { git = "https://github.com/davidson-engineering/datadash", tag = "v0.4.1" }
 ```
 
 Requires Python 3.13, Dash 4.4.1 or later and Plotly 7.1 or later.
@@ -64,7 +64,11 @@ Lux), and `assets/fonts.css` declares the bundled Nerd Fonts.
 `dropdown` style: that style sets the `--Dash-Fill-Interactive-Strong` (accent),
 `--Dash-Stroke-Strong` (borders) and `--Dash-Text-Strong` (option text)
 variables Dash 4 colors them with, so an override file recolors dropdowns by
-setting those keys. Dash serves the `assets/` folder automatically.
+setting those keys. `assets/keep-3d-camera.js` keeps a 3D scene's camera where
+the user left it when an animation plays: Plotly 4.1 saves a dragged camera
+into a layout that `Plotly.react` (which `dcc.Graph` calls) has since replaced,
+so each animation frame jumped back to an earlier camera. Dash serves the
+`assets/` folder, scripts included, automatically.
 
 ## Figures
 
