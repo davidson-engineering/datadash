@@ -26,18 +26,6 @@ from ..themes.manager import get_theme_manager
 
 # from ..utils import repeat, tile
 
-# Cache theme manager instance to avoid repeated lookups
-_cached_theme_manager = None
-
-
-def get_cached_theme_manager():
-    """Get cached theme manager instance to improve performance."""
-    global _cached_theme_manager
-    if _cached_theme_manager is None:
-        _cached_theme_manager = get_theme_manager()
-    return _cached_theme_manager
-
-
 # from ..converters.plotly_converter import convert_standard_to_plotly
 
 # Legacy TraceConstructor class removed - use src.visu.builders.trace_constructor.TraceConstructor
@@ -481,9 +469,10 @@ class TraceBuilder:
         Initialize TraceBuilder.
 
         Args:
-            theme_manager: Optional theme manager instance; defaults to global.
+            theme_manager: Optional theme manager instance; defaults to the global
+                one at the time, so a builder made after set_theme() uses its theme.
         """
-        self.theme_manager = theme_manager or get_cached_theme_manager()
+        self.theme_manager = theme_manager or get_theme_manager()
         self.logger = logging.getLogger(__name__)
         # Add property cache for performance
         self._property_cache = {}

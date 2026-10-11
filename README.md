@@ -55,7 +55,8 @@ set. Overrides take precedence over everything the theme defines.
 
 `set_theme` replaces the global manager, discarding earlier overrides, so call
 it once and then apply overrides. `get_theme_manager()` returns the current
-manager, creating the default theme on first use.
+manager, creating the default theme on first use; trace builders take the
+manager current when they are made.
 
 The dashboard stylesheet is `datadash/assets/bootstrap.min.css` (Bootswatch
 Lux), and `assets/fonts.css` declares the bundled Nerd Fonts.

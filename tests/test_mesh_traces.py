@@ -149,3 +149,17 @@ def test_an_animated_figure_mixes_meshes_and_lines_and_spans_both():
     x_range = figure.layout.scene.xaxis.range
     assert min(x_range) <= -2 and max(x_range) >= 2
 
+
+def test_a_builder_takes_the_theme_set_last(monkeypatch):
+    """set_theme() replaces the global theme; builders made after it use the new one."""
+    from datadash.themes import manager
+
+    monkeypatch.setattr(manager, "_theme_manager", None)
+    constructor = create_trace_constructor(name="part", data=_VERTICES, faces=_FACES, static=True)
+    TraceBuilder().build_trace(constructor)
+
+    manager.set_theme("default").merge_custom_config(
+        {"plotly": {"traces": {"part": {"color": "#abcdef"}}}}
+    )
+
+    assert TraceBuilder().build_trace(constructor).color == "#abcdef"
