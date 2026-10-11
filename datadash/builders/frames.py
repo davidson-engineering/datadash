@@ -25,6 +25,10 @@ class FramesConstructor:
     - Pre-processing and slicing of animated trace data
     - Building frame data with proper trace indexing
     - Optimized frame generation for animations
+
+    After the first frame, an animated mesh's frames carry only its vertices:
+    Plotly merges a frame's data into the trace it animates, so the faces and
+    styling it already has stay, and a frame of a mesh is about half the size.
     """
 
     def __init__(
@@ -91,6 +95,7 @@ class FramesConstructor:
                 static=constructor.static,
                 properties=constructor.properties,
                 number_frames=self.number_frames,
+                faces=constructor.faces,
             )
 
             # Build template trace
@@ -101,13 +106,19 @@ class FramesConstructor:
             _, _, _, resized_points = self.builder._prepare_xyzn(
                 resized_constructor, self.number_frames
             )
+            if constructor.is_mesh:
+                # A mesh's vertices are most of a figure's frames, and WebGL draws
+                # them in single precision anyway: send them so, in half the size
+                resized_points = resized_points.astype(np.float32)
 
             # Store template info
             self.frame_templates[key] = {
                 "template": template,
                 "trace_index": self.trace_indices[key],
                 "is_3d": resized_constructor.is_3d,
-                "closed": constructor.closed,
+                "is_mesh": constructor.is_mesh,
+                # A mesh's faces close it
+                "closed": constructor.closed and not constructor.is_mesh,
             }
 
             # Pre-slice along time axis (n dimension) for performance
@@ -181,6 +192,11 @@ class FramesConstructor:
         for key, template_info in self.frame_templates.items():
             if key in self.animated_constructors:
                 pts = self.pre_sliced[key][frame_idx]
+                if template_info["is_mesh"]:
+                    frame_traces.append(
+                        {"type": "mesh3d", "x": pts[:, 0], "y": pts[:, 1], "z": pts[:, 2]}
+                    )
+                    continue
                 trace_dict = dict(template_info["template"])
 
                 # Update trace data for this frame

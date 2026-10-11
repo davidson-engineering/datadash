@@ -320,6 +320,21 @@ plotly:
       visible: true
       hovertemplate: "%{y:.3f}"
 
+    # Defaults for meshes (trace constructors with faces), in place of the line
+    # and marker defaults above: a soft key light with a little sheen, shaded
+    # smoothly across the faces that share a vertex. Plotly's default light
+    # position lights a z-down scene from above; a light with any z offset left
+    # the top faces in shadow.
+    mesh:
+      flatshading: false
+      lighting:
+        ambient: 0.5
+        diffuse: 0.7
+        specular: 0.25
+        roughness: 0.45
+        fresnel: 0.15
+      visible: true
+
     traj:
       mode: lines
     traj.spatial:

@@ -8,7 +8,7 @@ results dashboards on top of any computation.
 datadash is released as git tags. Pin one in your project:
 
 ```bash
-uv add "datadash @ git+https://github.com/davidson-engineering/datadash@v0.3.0"
+uv add "datadash @ git+https://github.com/davidson-engineering/datadash@v0.4.0"
 ```
 
 or in `pyproject.toml`:
@@ -18,7 +18,7 @@ or in `pyproject.toml`:
 dependencies = ["datadash"]
 
 [tool.uv.sources]
-datadash = { git = "https://github.com/davidson-engineering/datadash", tag = "v0.3.0" }
+datadash = { git = "https://github.com/davidson-engineering/datadash", tag = "v0.4.0" }
 ```
 
 Requires Python 3.13, Dash 4.4.1 or later and Plotly 7.1 or later.
@@ -55,7 +55,8 @@ set. Overrides take precedence over everything the theme defines.
 
 `set_theme` replaces the global manager, discarding earlier overrides, so call
 it once and then apply overrides. `get_theme_manager()` returns the current
-manager, creating the default theme on first use.
+manager, creating the default theme on first use; trace builders take the
+manager current when they are made.
 
 The dashboard stylesheet is `datadash/assets/bootstrap.min.css` (Bootswatch
 Lux), and `assets/fonts.css` declares the bundled Nerd Fonts.
@@ -89,6 +90,13 @@ fig = BasicPlotBuilder().create_plot(
   scaling; `EndEffectorSpatialPlots` produces the XZ, YZ, XY, and 3D views.
   They are imported from `datadash.builders.plot` and are not in `__all__`
   yet, so they may still change between minor versions.
+- `PlotFigure3DAnimation` (`builders/figure.py`) animates trace constructors
+  (`create_trace_constructor`, `builders/trace.py`), whose points, of shape
+  (points, time, space), move from frame to frame. Given `faces`, triangles as
+  indices into its points of shape (F, 3), a constructor is a mesh: it is drawn
+  as a `Mesh3d`, styled from the theme's `mesh` trace defaults (its lighting)
+  rather than the line and marker `default`, and after the first frame its
+  frames carry only its vertices, in single precision.
 - `PlotRegistry` (`plots/registry.py`) registers plot functions by id with a
   decorator, so an app can look plots up by name.
 

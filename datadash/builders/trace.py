@@ -26,18 +26,6 @@ from ..themes.manager import get_theme_manager
 
 # from ..utils import repeat, tile
 
-# Cache theme manager instance to avoid repeated lookups
-_cached_theme_manager = None
-
-
-def get_cached_theme_manager():
-    """Get cached theme manager instance to improve performance."""
-    global _cached_theme_manager
-    if _cached_theme_manager is None:
-        _cached_theme_manager = get_theme_manager()
-    return _cached_theme_manager
-
-
 # from ..converters.plotly_converter import convert_standard_to_plotly
 
 # Legacy TraceConstructor class removed - use src.visu.builders.trace_constructor.TraceConstructor
@@ -78,6 +66,22 @@ def points_to_xyz_arrays(points):
     return points[0], points[1], points[2]
 
 
+def _validated_faces(name: str, faces: npt.ArrayLike, number_points: int) -> np.ndarray:
+    """A mesh's faces as an (F, 3) integer array, checked to index its points."""
+    faces = np.asarray(faces)
+    if faces.ndim != 2 or faces.shape[1] != 3 or not np.issubdtype(faces.dtype, np.integer):
+        raise ValueError(
+            f"Mesh '{name}': faces must be integer triangles of shape (F, 3),"
+            f" got {faces.dtype} of shape {faces.shape}"
+        )
+    if faces.size and (faces.min() < 0 or faces.max() >= number_points):
+        raise ValueError(
+            f"Mesh '{name}': faces index points 0 to {number_points - 1},"
+            f" got {faces.min()} to {faces.max()}"
+        )
+    return faces
+
+
 @dataclass
 class TraceConstructor:
     """A class for constructing trace data with hierarchical naming.
@@ -95,6 +99,9 @@ class TraceConstructor:
         static (bool): Whether this is a static trace (doesn't change with animation)
         properties (Optional[Dict[str, Any]]): Minimal properties (e.g., visibility)
         number_frames (Optional[int]): Target number of frames for animation resizing
+        faces (Optional[npt.ArrayLike]): For a mesh, its triangles as indices into
+            its points, shape (F, 3). The points are then the mesh's vertices, and
+            an animated mesh moves its vertices from frame to frame.
     """
 
     name: str
@@ -104,6 +111,7 @@ class TraceConstructor:
     static: bool = False
     properties: Optional[Dict[str, Any]] = None
     number_frames: Optional[int] = None
+    faces: Optional[npt.ArrayLike] = None
 
     def __post_init__(self):
         """Post-initialization processing."""
@@ -114,6 +122,9 @@ class TraceConstructor:
         # Only convert time to numpy array if provided and not already one
         if self.time is not None and not isinstance(self.time, np.ndarray):
             self.time = np.asarray(self.time)
+
+        if self.faces is not None:
+            self.faces = _validated_faces(self.name, self.faces, len(self.data))
 
         # Initialize properties if None
         if self.properties is None:
@@ -127,6 +138,11 @@ class TraceConstructor:
     def is_animated(self) -> bool:
         """Check if this trace is animated (has time data and is not static)."""
         return self.time is not None and not self.static
+
+    @property
+    def is_mesh(self) -> bool:
+        """Whether this trace is a mesh (it has faces), drawn as a Mesh3d."""
+        return self.faces is not None
 
     @property
     def base_name(self) -> str:
@@ -168,7 +184,7 @@ class TraceConstructor:
             else:
                 properties_dict = self.properties.copy()
 
-        return {
+        trace = {
             "name": self.name,
             "data": self.data,
             "time": self.time,
@@ -176,6 +192,11 @@ class TraceConstructor:
             "static": self.static,
             "properties": properties_dict,
         }
+        # Only a mesh has faces, so functions unpacking a line's constructor
+        # (points_to_traces(**constructor)) need not take them
+        if self.faces is not None:
+            trace["faces"] = self.faces
+        return trace
 
     def __iter__(self):
         """Make TraceConstructor unpackable with ** operator.
@@ -260,6 +281,7 @@ def create_trace_constructor(
     closed: bool = False,
     static: bool = False,
     properties: Optional[Dict[str, Any]] = None,
+    faces: Optional[npt.ArrayLike] = None,
     **kwargs,
 ) -> TraceConstructor:
     """Convenience function to create a TraceConstructor.
@@ -282,6 +304,8 @@ def create_trace_constructor(
         closed: Whether trace should be closed
         static: Whether this is a static trace
         properties: Trace properties dict
+        faces: For a mesh, its triangles as indices into the points (axis 0 of
+            data), shape (F, 3); the trace is then drawn as a Mesh3d
         **kwargs: Additional properties merged with properties
 
     Returns:
@@ -375,6 +399,7 @@ def create_trace_constructor(
         closed=closed,
         static=static,
         properties=properties,
+        faces=faces,
     )
 
 
@@ -431,6 +456,8 @@ class TraceBuilder:
     - Theme-based property merging (theme takes priority, caching handled by theme manager).
     - Handles static and animated traces.
     - Supports 2D and 3D traces, including multi-segment and closed shapes.
+    - Draws a constructor with faces as a Mesh3d, styled from the theme's
+      "mesh" trace defaults rather than the line and marker "default".
     - Preserves axes convention: (N_points, time, space), where:
         N_points = number of points in a trace
         time = number of frames for animated traces
@@ -442,9 +469,10 @@ class TraceBuilder:
         Initialize TraceBuilder.
 
         Args:
-            theme_manager: Optional theme manager instance; defaults to global.
+            theme_manager: Optional theme manager instance; defaults to the global
+                one at the time, so a builder made after set_theme() uses its theme.
         """
-        self.theme_manager = theme_manager or get_cached_theme_manager()
+        self.theme_manager = theme_manager or get_theme_manager()
         self.logger = logging.getLogger(__name__)
         # Add property cache for performance
         self._property_cache = {}
@@ -455,7 +483,7 @@ class TraceBuilder:
         self,
         constructor: TraceConstructor,
         number_frames: Optional[int] = None,
-    ) -> Union[go.Scatter, go.Scatter3d]:
+    ) -> Union[go.Scatter, go.Scatter3d, go.Mesh3d]:
         """
         Build a single Plotly trace from a TraceConstructor object.
 
@@ -465,7 +493,7 @@ class TraceBuilder:
                 number of frames.
 
         Returns:
-            go.Scatter or go.Scatter3d: A Plotly trace ready for plotting.
+            go.Scatter, go.Scatter3d or go.Mesh3d: A Plotly trace ready for plotting.
         """
         # Always use theme resolution
         props = self._resolve_properties(constructor)
@@ -474,7 +502,10 @@ class TraceBuilder:
         x, y, z, resized_points = self._prepare_xyzn(constructor, number_frames)
 
         # Create Plotly trace
-        trace = self._create_trace(x, y, z, props)
+        if constructor.is_mesh:
+            trace = self._create_mesh(x, y, z, constructor.faces, props)
+        else:
+            trace = self._create_trace(x, y, z, props)
 
         # Add metadata for animated traces
         if constructor.is_animated and not constructor.static:
@@ -511,8 +542,10 @@ class TraceBuilder:
         Merge constructor properties with theme properties (theme takes priority).
 
         Performs hierarchical theme lookup via theme manager; falls back to 'default' if none found.
-        Theme properties override constructor properties to allow theme manager
-        control over styling priorities. All caching is handled by the theme manager.
+        A mesh's theme is merged over the 'mesh' defaults instead, as the line and
+        marker properties of 'default' do not apply to it. Theme properties override
+        constructor properties to allow theme manager control over styling priorities.
+        All caching is handled by the theme manager.
 
         Args:
             constructor: TraceConstructor object.
@@ -523,6 +556,7 @@ class TraceBuilder:
         # Check cache first for performance
         cache_key = (
             constructor.name,
+            constructor.is_mesh,
             str(
                 sorted(constructor.properties.items()) if constructor.properties else ""
             ),
@@ -536,13 +570,14 @@ class TraceBuilder:
             constructor_props = {}
 
         # Get theme properties
+        default = "mesh" if constructor.is_mesh else "default"
         for key in constructor.get_hierarchical_lookup_keys():
-            theme = self.theme_manager.get_trace_theme(key)
+            theme = self.theme_manager.get_trace_theme(key, default=default)
             if theme:
                 props = merge({}, constructor_props, theme)
                 break
         else:
-            default_theme = self.theme_manager.get_trace_theme("default")
+            default_theme = self.theme_manager.get_trace_theme(default, default=default)
             props = merge({}, constructor_props, default_theme or {})
 
         # Inject human-readable name from constructor (trace identity)
@@ -639,8 +674,8 @@ class TraceBuilder:
             else:
                 raise ValueError(f"Unsupported points dimensionality: {points.ndim}")
 
-        # Close polygon if requested
-        if getattr(constructor, "closed", False) and len(x) > 0:
+        # Close polygon if requested; a mesh's faces close it
+        if constructor.closed and not constructor.is_mesh and len(x) > 0:
             x = np.concatenate([x, x[:1]])
             y = np.concatenate([y, y[:1]])
             if z is not None:
@@ -723,3 +758,29 @@ class TraceBuilder:
         else:
             # 3D trace
             return go.Scatter3d(x=x, y=y, z=z, **_filter_invalid_props(props, invalid_props_3d))
+
+    def _create_mesh(
+        self,
+        x: np.ndarray,
+        y: np.ndarray,
+        z: Optional[np.ndarray],
+        faces: np.ndarray,
+        props: Dict[str, Any],
+    ) -> go.Mesh3d:
+        """
+        Create a Plotly Mesh3d trace from its vertices and triangles.
+
+        Args:
+            x: X coordinates of the vertices (1D array)
+            y: Y coordinates of the vertices (1D array)
+            z: Z coordinates of the vertices (1D array); a mesh is 3D only
+            faces: Triangles as indices into the vertices, shape (F, 3)
+            props: Dictionary of Plotly properties
+
+        Returns:
+            go.Mesh3d
+        """
+        if z is None:
+            raise ValueError(f"Mesh '{props.get('name', '?')}' needs 3D points")
+        i, j, k = faces.T
+        return go.Mesh3d(x=x, y=y, z=z, i=i, j=j, k=k, **props)
