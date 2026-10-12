@@ -76,6 +76,10 @@ so each animation frame jumped back to an earlier camera.
 column of the page: Plotly fits each chart's margins to its own tick labels,
 so it gives every chart in a column the widest margins any of them needs
 (automargin still widens a margin a chart's labels need, so none is clipped).
+`assets/place-legend.js` places a chart's legend again when Plotly leaves it
+out of place: on a chart's first draw, Plotly 4.1 places the legend before the
+title reserves its band of the top margin (see Figures), then moves the plot
+area down without moving the legend, which is left over the title.
 Dash serves the `assets/` folder, scripts included, automatically.
 
 ## Figures

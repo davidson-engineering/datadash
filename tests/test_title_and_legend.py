@@ -6,7 +6,9 @@ under that. A legend over the plot area pushes the top margin out by its
 height, and so it used to grow upwards from the plot area: on a phone, where a
 legend of three entries wraps to three rows, it was drawn over the title. The
 title now reserves its own band of the top margin (the theme's automargin), and
-the legend is pushed out below it.
+the legend is pushed out below it. On a chart's first draw Plotly places the
+legend before the band is reserved and leaves it there, over the title, unless
+something else redraws the chart; assets/place-legend.js places it again.
 """
 
 import os
@@ -19,7 +21,7 @@ from werkzeug.serving import make_server
 
 from datadash.builders.content import create_two_column_builder
 from datadash.builders.plot import CombinedPlotBuilder, EndEffectorSpatialPlots
-from datadash.dashboard.base import DashboardApp
+from datadash.dashboard.base import DashboardApp, assets_path
 from datadash.dashboard.components import create_graph_component
 from datadash.themes.manager import ThemeManager
 
@@ -51,12 +53,16 @@ _BEFORE = _time_series("Linear Actuator Force", 1).update_layout(
 )
 
 # Charts with a legend of three entries (three rows on a phone), of one, and of
-# none, and a 3D chart, which sets margins of its own
+# none, and a 3D chart, which sets margins of its own. The wide chart's side and
+# bottom margins already hold its labels, so once its title has reserved its
+# band nothing moves its margins again: Plotly draws it once, and leaves its
+# legend where it placed it before the band (see place-legend.js).
 _CHARTS = {
     "three": _time_series("Actuator Torque", 3),
     "one": _time_series("Linear Actuator Force", 1),
     "none": EndEffectorSpatialPlots().plot_xz(_PATH, np.linalg.norm(_PATH, axis=1)),
     "scene": EndEffectorSpatialPlots().plot_overview(_PATH, np.linalg.norm(_PATH, axis=1)),
+    "wide": _time_series("Actuator Torque", 3).update_layout(margin={"l": 100, "r": 100, "b": 100}),
 }
 
 
@@ -73,7 +79,7 @@ class _Dashboard(DashboardApp):
                 [
                     [_graph("three"), _graph("one")],
                     [_graph("none"), _graph("scene")],
-                    [create_graph_component("before", _BEFORE)],
+                    [_graph("wide"), create_graph_component("before", _BEFORE)],
                 ]
             )
         )
@@ -128,13 +134,18 @@ _BOXES = """() => Object.fromEntries([...document.querySelectorAll('.js-plotly-p
 # the charts a moment later
 _SETTLED = """() => {
   const gds = [...document.querySelectorAll('.js-plotly-plot')];
-  return gds.length === 5 && gds.every(gd => gd._fullLayout && gd._fullLayout._size
+  return gds.length === 6 && gds.every(gd => gd._fullLayout && gd._fullLayout._size
     && Math.abs(gd._fullLayout.width - gd.getBoundingClientRect().width) < 1);
 }"""
 
 
-def _boxes(browser, url, width):
+def _boxes(browser, url, width, scripts=("place-legend.js",)):
+    """Each chart's boxes, on a page that loads, of the scripts that redraw its
+    charts, only ``scripts``: lining up plot areas redraws charts, which would
+    place their legends again whatever place-legend.js does."""
     page = browser.new_page(viewport={"width": width, "height": 1000})
+    for script in {"place-legend.js", "align-plot-areas.js"} - set(scripts):
+        page.route(f"**/assets/{script}*", lambda route: route.abort())
     page.goto(url)
     page.wait_for_function(_SETTLED, timeout=10000)
     page.wait_for_timeout(300)  # for the margins the title and legend push out
@@ -146,6 +157,30 @@ def _boxes(browser, url, width):
 def _charts(browser, url, width):
     """The charts laid out by the theme, by name."""
     return {name: box for name, box in _boxes(browser, url, width).items() if name in _CHARTS}
+
+
+def test_the_legend_placing_script_ships_with_the_package():
+    assert (assets_path / "place-legend.js").is_file()
+
+
+@pytest.mark.parametrize("width", [375, 1600])
+def test_plotly_leaves_a_legend_over_the_title_that_the_script_places_under_it(browser, url, width):
+    """Without place-legend.js Plotly leaves the wide chart's legend where it
+    placed it before the title reserved its band (if this fails, Plotly places
+    it again itself, and the script can go)."""
+    unplaced = _boxes(browser, url, width, scripts=())["wide"]
+    assert unplaced["legend"]["top"] < unplaced["title"]["bottom"]
+    placed = _boxes(browser, url, width)["wide"]
+    assert placed["legend"]["top"] >= placed["title"]["bottom"]
+    assert placed["plot"]["top"] == unplaced["plot"]["top"]
+
+
+def test_the_legend_stays_placed_when_the_plot_areas_line_up(browser, url):
+    """The page loads both scripts that redraw charts."""
+    boxes = _boxes(browser, url, 375, scripts=("place-legend.js", "align-plot-areas.js"))
+    for name in _CHARTS:
+        legend = boxes[name]["legend"]
+        assert legend is None or legend["top"] >= boxes[name]["title"]["bottom"], name
 
 
 @pytest.mark.parametrize("width", [375, 768, 1600])
