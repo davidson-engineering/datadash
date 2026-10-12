@@ -1,124 +1,43 @@
-/* Font Declarations for Robot Simulator */
+/* Fonts the bundled themes use: DroidSansMono for the default theme, ProFont
+   for the futuristic one. Each family is two files (see fonts/README.md): its
+   text glyphs, and the Nerd Font Material Design icons the themes' tab icons
+   come from. A browser fetches a face only for characters in its
+   unicode-range that a page shows, so the icons cost nothing until one is. */
 
-/* Agave Nerd Font */
+/* Droid Sans Mono Nerd Font */
 @font-face {
-    font-family: 'AgaveNerdFont';
-    src: url('./fonts/Agave/AgaveNerdFont-Regular.ttf') format('truetype');
+    font-family: 'DroidSansMonoNerdFontPropo';
+    src: url('./fonts/DroidSansMono/DroidSansMNerdFontPropo-Regular.woff2') format('woff2');
+    unicode-range: U+0000-DFFF, U+F900-FFFF;
     font-weight: 400;
     font-style: normal;
     font-display: swap;
 }
 
 @font-face {
-    font-family: 'AgaveNerdFont';
-    src: url('./fonts/Agave/AgaveNerdFont-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'AgaveNerdFontMono';
-    src: url('./fonts/Agave/AgaveNerdFontMono-Regular.ttf') format('truetype');
+    font-family: 'DroidSansMonoNerdFontPropo';
+    src: url('./fonts/DroidSansMono/DroidSansMNerdFontPropo-Icons.woff2') format('woff2');
+    unicode-range: U+F0001-F1AF0;
     font-weight: 400;
     font-style: normal;
     font-display: swap;
 }
 
 @font-face {
-    font-family: 'AgaveNerdFontMono';
-    src: url('./fonts/Agave/AgaveNerdFontMono-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'AgaveNerdFontPropo';
-    src: url('./fonts/Agave/AgaveNerdFontPropo-Regular.ttf') format('truetype');
+    font-family: 'DroidSansMonoNerdFontMono';
+    src: url('./fonts/DroidSansMono/DroidSansMNerdFontMono-Regular.woff2') format('woff2');
+    unicode-range: U+0000-DFFF, U+F900-FFFF;
     font-weight: 400;
     font-style: normal;
     font-display: swap;
 }
 
 @font-face {
-    font-family: 'AgaveNerdFontPropo';
-    src: url('./fonts/Agave/AgaveNerdFontPropo-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-/* Monofur Nerd Font */
-@font-face {
-    font-family: 'MonofurNerdFont';
-    src: url('./fonts/Monofur/MonofurNerdFont-Regular.ttf') format('truetype');
+    font-family: 'DroidSansMonoNerdFontMono';
+    src: url('./fonts/DroidSansMono/DroidSansMNerdFontMono-Icons.woff2') format('woff2');
+    unicode-range: U+F0001-F1AF0;
     font-weight: 400;
     font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'MonofurNerdFont';
-    src: url('./fonts/Monofur/MonofurNerdFont-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'MonofurNerdFont';
-    src: url('./fonts/Monofur/MonofurNerdFont-Italic.ttf') format('truetype');
-    font-weight: 400;
-    font-style: italic;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'MonofurNerdFontMono';
-    src: url('./fonts/Monofur/MonofurNerdFontMono-Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'MonofurNerdFontMono';
-    src: url('./fonts/Monofur/MonofurNerdFontMono-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'MonofurNerdFontMono';
-    src: url('./fonts/Monofur/MonofurNerdFontMono-Italic.ttf') format('truetype');
-    font-weight: 400;
-    font-style: italic;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'MonofurNerdFontPropo';
-    src: url('./fonts/Monofur/MonofurNerdFontPropo-Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'MonofurNerdFontPropo';
-    src: url('./fonts/Monofur/MonofurNerdFontPropo-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'MonofurNerdFontPropo';
-    src: url('./fonts/Monofur/MonofurNerdFontPropo-Italic.ttf') format('truetype');
-    font-weight: 400;
-    font-style: italic;
     font-display: swap;
 }
 
@@ -129,210 +48,20 @@
    those out so the browser takes them from the next font in the stack. */
 @font-face {
     font-family: 'ProFontNerdFont';
-    src: url('./fonts/ProFont/ProFontIIxNerdFont-Regular.ttf') format('truetype');
+    src: url('./fonts/ProFont/ProFontIIxNerdFont-Regular.woff2') format('woff2');
     unicode-range:
         U+0000-00A5, U+00A7-00B1, U+00B4-00B8, U+00BA-00BB, U+00BF-00CF, U+00D1-00DC, U+00DF-00EF, U+00F1-00FD, U+00FF-0140, U+0143-015F, U+0162-017C, U+017F-2211,
-        U+2213-FB00, U+FB03-10FFFF;
+        U+2213-DFFF, U+F900-FB00, U+FB03-FFFF;
     font-weight: 400;
     font-style: normal;
     font-display: swap;
 }
 
 @font-face {
-    font-family: 'ProFontNerdFontMono';
-    src: url('./fonts/ProFont/ProFontIIxNerdFontMono-Regular.ttf') format('truetype');
-    unicode-range:
-        U+0000-00A5, U+00A7-00B1, U+00B4-00B8, U+00BA-00BB, U+00BF-00CF, U+00D1-00DC, U+00DF-00EF, U+00F1-00FD, U+00FF-0140, U+0143-015F, U+0162-017C, U+017F-2211,
-        U+2213-FB00, U+FB03-10FFFF;
+    font-family: 'ProFontNerdFont';
+    src: url('./fonts/ProFont/ProFontIIxNerdFont-Icons.woff2') format('woff2');
+    unicode-range: U+F0001-F1AF0;
     font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'ProFontNerdFontPropo';
-    src: url('./fonts/ProFont/ProFontIIxNerdFontPropo-Regular.ttf') format('truetype');
-    unicode-range:
-        U+0000-00A5, U+00A7-00B1, U+00B4-00B8, U+00BA-00BB, U+00BF-00CF, U+00D1-00DC, U+00DF-00EF, U+00F1-00FD, U+00FF-0140, U+0143-015F, U+0162-017C, U+017F-2211,
-        U+2213-FB00, U+FB03-10FFFF;
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'ProFontWindowsNerdFont';
-    src: url('./fonts/ProFont/ProFontWindowsNerdFont-Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'ProFontWindowsNerdFontMono';
-    src: url('./fonts/ProFont/ProFontWindowsNerdFontMono-Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'ProFontWindowsNerdFontPropo';
-    src: url('./fonts/ProFont/ProFontWindowsNerdFontPropo-Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-/* Terminus Nerd Font */
-@font-face {
-    font-family: 'TerminessNerdFont';
-    src: url('./fonts/Terminus/TerminessNerdFont-Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'TerminessNerdFont';
-    src: url('./fonts/Terminus/TerminessNerdFont-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'TerminessNerdFont';
-    src: url('./fonts/Terminus/TerminessNerdFont-Italic.ttf') format('truetype');
-    font-weight: 400;
-    font-style: italic;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'TerminessNerdFont';
-    src: url('./fonts/Terminus/TerminessNerdFont-BoldItalic.ttf') format('truetype');
-    font-weight: 700;
-    font-style: italic;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'TerminessNerdFontMono';
-    src: url('./fonts/Terminus/TerminessNerdFontMono-Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'TerminessNerdFontMono';
-    src: url('./fonts/Terminus/TerminessNerdFontMono-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'TerminessNerdFontMono';
-    src: url('./fonts/Terminus/TerminessNerdFontMono-Italic.ttf') format('truetype');
-    font-weight: 400;
-    font-style: italic;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'TerminessNerdFontMono';
-    src: url('./fonts/Terminus/TerminessNerdFontMono-BoldItalic.ttf') format('truetype');
-    font-weight: 700;
-    font-style: italic;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'TerminessNerdFontPropo';
-    src: url('./fonts/Terminus/TerminessNerdFontPropo-Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'TerminessNerdFontPropo';
-    src: url('./fonts/Terminus/TerminessNerdFontPropo-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'TerminessNerdFontPropo';
-    src: url('./fonts/Terminus/TerminessNerdFontPropo-Italic.ttf') format('truetype');
-    font-weight: 400;
-    font-style: italic;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'TerminessNerdFontPropo';
-    src: url('./fonts/Terminus/TerminessNerdFontPropo-BoldItalic.ttf') format('truetype');
-    font-weight: 700;
-    font-style: italic;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'DroidSansMonoNerdFontMono';
-    src: url('./fonts/DroidSansMono/DroidSansMNerdFontMono-Regular.otf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'DroidSansMonoNerdFont';
-    src: url('./fonts/DroidSansMono/DroidSansMNerdFont-Regular.otf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'DroidSansMonoNerdFontPropo';
-    src: url('./fonts/DroidSansMono/DroidSansMNerdFontPropo-Regular.otf') format('truetype');
-    font-weight: 400;
-    font-style: italic;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'InputMono-Bold';
-    src: url('./fonts/InputMono/InputMono-Bold.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'InputMono-Regular';
-    src: url('./fonts/InputMono/InputMono-Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'InputMono-Medium';
-    src: url('./fonts/InputMono/InputMono-Medium.ttf') format('truetype');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'InputMono-Light';
-    src: url('./fonts/InputMono/InputMono-Light.ttf') format('truetype');
-    font-weight: 300;
     font-style: normal;
     font-display: swap;
 }
