@@ -1,0 +1,25 @@
+# Dependabot opens a pull request each week for whatever here has a newer
+# release: the actions in .github/workflows and the Python packages in
+# uv.lock. A week's updates of one kind arrive together, except major versions
+# of Python packages, which come one per pull request.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      python-packages:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: chore

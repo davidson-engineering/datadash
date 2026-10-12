@@ -171,6 +171,10 @@ CI (`.github/workflows/ci.yml`) runs all three against `uv.lock` on pushes to
 the tests (not ruff or pyright) against the newest dependency versions
 `pyproject.toml` allows.
 
+Dependabot (`.github/dependabot.yml`) opens a pull request each week for newer
+releases of the workflow's actions and of the packages in `uv.lock`, a week's
+updates of each kind together.
+
 To work on datadash alongside an app that uses it, install your checkout into
 the app's environment for the session: `uv pip install -e ../datadash` from the
 app. The app's next `uv sync` restores its pinned tag.
