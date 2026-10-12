@@ -20,6 +20,8 @@ colors:
 fonts:
   monospace: &monospace "'BlexMonoNerdFontMono', 'IBM Plex Mono', 'ProFontNerdFont', 'ProFont IIx Nerd Font', monospace"
   sans: &sans "'Inter', 'Helvetica Neue', 'Arial', sans-serif"
+  # The page's font where no style sets one, as in the main container
+  body: *monospace
 
 
 icons:

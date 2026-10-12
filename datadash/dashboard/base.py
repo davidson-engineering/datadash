@@ -42,16 +42,25 @@ class DashboardApp(ABC):
         # over the same selectors.
         external_stylesheets = []
 
-        # # Add theme-specific font CSS
-        # font_css = theme.get_font_css()
-        # if font_css and theme.theme_name == "futuristic":
-        #     # For futuristic theme, inject font CSS directly
-        #     pass  # Will be handled by inline styles in dashboard layout
-
-        return dash.Dash(
+        app = dash.Dash(
             __name__,
             external_stylesheets=external_stylesheets,
             assets_folder=str(assets_path),
             title=theme.get_dashboard_title(),
             suppress_callback_exceptions=True,
         )
+
+        # Text that no theme style reaches, such as Dash's "Loading..." before
+        # the layout arrives and Bootstrap's tooltips and popovers, takes the
+        # theme's body font rather than Bootstrap's sans-serif. The rule comes
+        # after the assets' stylesheets, so it wins over bootstrap.min.css.
+        body_font = theme.fonts.get("body")
+        if body_font:
+            app.index_string = app.index_string.replace(
+                "{%css%}",
+                "{%css%}\n        <style>:root { "
+                f"--bs-body-font-family: {body_font}; --bs-font-sans-serif: {body_font}; "
+                "}</style>",
+                1,
+            )
+        return app

@@ -59,7 +59,11 @@ manager, creating the default theme on first use; trace builders take the
 manager current when they are made.
 
 The dashboard stylesheet is `datadash/assets/bootstrap.min.css` (Bootswatch
-Lux), and `assets/fonts.css` declares the bundled Nerd Fonts.
+Lux), and `assets/fonts.css` declares the bundled Nerd Fonts. A page fetches
+nothing from another host: Lux's Nunito Sans import from Google Fonts is cut
+out, and `_create_app()` sets Bootstrap's body font to the theme's `fonts.body`,
+so text no theme style reaches (Dash's "Loading..." placeholder, Bootstrap
+tooltips) is in the theme's font too.
 `assets/dash-components.css` lets Dash 4's dropdowns take the theme's
 `dropdown` style: that style sets the `--Dash-Fill-Interactive-Strong` (accent),
 `--Dash-Stroke-Strong` (borders) and `--Dash-Text-Strong` (option text)
