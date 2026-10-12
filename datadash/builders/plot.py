@@ -231,8 +231,9 @@ class SpatialPlotBuilder:
             },
             "title_text": title,
             "showlegend": False,
-            # Room for the tilted scene's tick labels, which clipped at the edges
-            "margin": {"l": 10, "r": 10, "t": 60, "b": 10},
+            # Room for the tilted scene's tick labels, which clipped at the edges.
+            # The title reserves its band above the top margin (see the theme).
+            "margin": {"l": 10, "r": 10, "t": 10, "b": 10},
         }
 
     @classmethod

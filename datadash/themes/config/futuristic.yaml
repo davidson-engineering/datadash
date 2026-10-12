@@ -149,7 +149,8 @@ plotly:
       color: "#88ccff"
     colorway: ["#00ff88", "#88ccff", "#ffaa00", "#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#feca57"]
     autosize: true
-    margin: {l: 50, r: 50, t: 50, b: 50}
+    # margin.t as the default theme's, for its title and legend
+    margin: {l: 50, r: 50, t: 12, b: 50}
     xaxis:
       gridcolor: "#334155"
       color: "#88ccff"

@@ -76,6 +76,10 @@ so each animation frame jumped back to an earlier camera.
 column of the page: Plotly fits each chart's margins to its own tick labels,
 so it gives every chart in a column the widest margins any of them needs
 (automargin still widens a margin a chart's labels need, so none is clipped).
+`assets/place-legend.js` places a chart's legend again when Plotly leaves it
+out of place: on a chart's first draw, Plotly 4.1 places the legend before the
+title reserves its band of the top margin (see Figures), then moves the plot
+area down without moving the legend, which is left over the title.
 Dash serves the `assets/` folder, scripts included, automatically.
 
 ## Figures
@@ -100,6 +104,14 @@ fig = BasicPlotBuilder().create_plot(
   (`builders/plot.py`) build line plots, plots sharing axes, and subplot grids.
   A `secondary_axis` shows the same data in other units on a y-axis on the
   plot area's right edge, its labels in the right margin.
+- A figure's title sits at its top, its legend under the title and its plot
+  area under the legend: the title reserves its band of the top margin
+  (`title.automargin`) and the legend pushes the margin out below it, so a
+  legend that wraps onto more rows on a narrow chart grows down, never over
+  the title. Plotly reserves the band only while it is deeper than
+  `margin.t`, which the themes keep to 12px: a figure that sets a deeper top
+  margin has its title drawn higher than other charts', and its legend placed
+  regardless of its title.
 - `Spatial2DPlotBuilder` and `Spatial3DPlotBuilder` plot paths with equal axis
   scaling; `EndEffectorSpatialPlots` produces the XZ, YZ, XY, and 3D views.
   They are imported from `datadash.builders.plot` and are not in `__all__`
