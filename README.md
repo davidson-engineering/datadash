@@ -67,8 +67,12 @@ variables Dash 4 colors them with, so an override file recolors dropdowns by
 setting those keys. `assets/keep-3d-camera.js` keeps a 3D scene's camera where
 the user left it when an animation plays: Plotly 4.1 saves a dragged camera
 into a layout that `Plotly.react` (which `dcc.Graph` calls) has since replaced,
-so each animation frame jumped back to an earlier camera. Dash serves the
-`assets/` folder, scripts included, automatically.
+so each animation frame jumped back to an earlier camera.
+`assets/align-plot-areas.js` lines up the plot areas of charts stacked in one
+column of the page: Plotly fits each chart's margins to its own tick labels,
+so it gives every chart in a column the widest margins any of them needs
+(automargin still widens a margin a chart's labels need, so none is clipped).
+Dash serves the `assets/` folder, scripts included, automatically.
 
 ## Figures
 
@@ -90,6 +94,8 @@ fig = BasicPlotBuilder().create_plot(
 
 - `BasicPlotBuilder`, `CombinedPlotBuilder`, `SubplotsPlotBuilder`
   (`builders/plot.py`) build line plots, plots sharing axes, and subplot grids.
+  A `secondary_axis` shows the same data in other units on a y-axis on the
+  plot area's right edge, its labels in the right margin.
 - `Spatial2DPlotBuilder` and `Spatial3DPlotBuilder` plot paths with equal axis
   scaling; `EndEffectorSpatialPlots` produces the XZ, YZ, XY, and 3D views.
   They are imported from `datadash.builders.plot` and are not in `__all__`
@@ -128,7 +134,8 @@ the assets folder and page title), then call `run(debug, port, host)`.
 ## Development
 
 ```bash
-uv sync            # installs datadash and the dev tools from uv.lock
+uv sync                               # installs datadash and the dev tools from uv.lock
+uv run playwright install chromium    # once: the browser the page scripts' tests drive
 uv run pytest
 uv run ruff check .
 uv run pyright
@@ -139,6 +146,9 @@ standard mode, configured under `[tool.pyright]` in `pyproject.toml`. Plotly's
 trace properties and Dash's component props are not annotated, so tests read
 them from `to_plotly_json()`. Where a library's own annotations are wrong, the
 line carries a `# pyright: ignore[<rule>]` with the reason.
+
+The tests of the scripts in `assets/` serve a small dashboard and measure it in
+headless Chromium; without Chromium they are skipped, except in CI.
 
 CI (`.github/workflows/ci.yml`) runs all three against `uv.lock` on pushes to
 `main` and on every pull request. Weekly, or when started by hand, it also runs
