@@ -82,12 +82,11 @@ styles:
     justifyContent: center
     textAlign: center
     lineHeight: 1.25
+    # Two lines of label, so a row of tabs is as tall whether or not its
+    # labels wrap. How wide tabs are, and how they share the bar's rows, is
+    # the bar's stylesheet's (`.datadash-tabs` in assets/dash-components.css):
+    # it takes a word of 14 characters to fit at this font size and padding.
     minHeight: "3.5rem"
-    # Wide enough for "END EFFECTOR" on one line, so labels wrap to at most two
-    # lines; never narrower than the longest single word ("SPECIFICATIONS").
-    flex: "1 0 10rem"
-    minWidth: "min-content"
-    maxWidth: "12rem"
 
   tab_selected:
     <<: *tab_style
@@ -98,12 +97,7 @@ styles:
   tab_container:
     background: *color_secondary_bg
     margin: 0rem
-    padding: "0.25rem 1rem 0.75rem"
-    gap: 0.75rem
-    display: flex
-    # Wrap onto further rows when the tabs don't fit, so every tab stays visible
-    flexWrap: wrap
-    justifyContent: center
+    # Its padding, gap and layout are in assets/dash-components.css
     flex-shrink: 0
     border-bottom: *border_style
 

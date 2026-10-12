@@ -176,12 +176,47 @@ def _sectioned_table(sections, columns, header_styles, body_styles, container_st
     )
 
 
+# How many tabs side by side the tab bar's layout tells apart (the rules for
+# `.datadash-tabs` in assets/dash-components.css): from three, where the tabs
+# start to wrap onto rows (fewer fit on one row that scrolls), up to twelve
+_FEWEST_TABS_PER_ROW = 3
+_MOST_TABS_PER_ROW = 12
+
+
+def _tabs_per_row(count, fit):
+    """How many of ``count`` tabs a row of the tab bar holds when ``fit`` fit side by side.
+
+    The tabs take as few rows as that allows, and a row holds as few tabs as
+    those rows allow: where eight fit, nine tabs make rows of five and four,
+    not eight and one. Rows fill in order, so the last can hold fewer than the
+    others (ten tabs where four fit: four, four and two).
+    """
+    rows = math.ceil(count / fit)
+    return math.ceil(count / rows)
+
+
 def create_tabs(children, id="dashboard", value=None, style=None):
-    """Themed tab bar. With no ``value``, the first tab starts selected."""
+    """Themed tab bar. With no ``value``, the first tab starts selected.
+
+    The tabs share each row equally, so their labels wrap alike, and are never
+    narrower than a word of 14 characters. When they do not fit on one row they
+    wrap onto as few rows as they can, as evenly as they can (see
+    ``_tabs_per_row``), and where fewer than three fit side by side they keep
+    to one row that scrolls sideways.
+    """
 
     theme = get_theme_manager()
 
+    # The bar's stylesheet knows how many tabs fit side by side from its width;
+    # how many a row then holds depends on how many tabs there are
+    count = max(len(children) if isinstance(children, (list, tuple)) else 1, 1)
+    layout = {
+        f"--tabs-per-row-{fit}": str(_tabs_per_row(count, fit))
+        for fit in range(_FEWEST_TABS_PER_ROW, _MOST_TABS_PER_ROW + 1)
+    }
+
     default_style = theme.get_component_style("tab_container").copy()
+    merge(default_style, layout)
     if style:
         merge(default_style, style)
     style = default_style
@@ -194,9 +229,17 @@ def create_tabs(children, id="dashboard", value=None, style=None):
         id=id,
         **selection,
         children=children,
+        # Fewer than three tabs keep to one row where three would not fit, and
+        # only scroll if even they do not
+        className=(
+            "datadash-tabs datadash-tabs--scrolls"
+            if count >= _FEWEST_TABS_PER_ROW
+            else "datadash-tabs"
+        ),
+        parent_className="datadash-tabs-parent",
         style=style,
         # dcc.Tabs stacks tabs vertically below 800px by default, which overflowed
-        # the header. The theme's tab bar wraps onto extra rows instead.
+        # the header. The bar wraps onto rows, or scrolls, instead.
         mobile_breakpoint=0,
     )
 
