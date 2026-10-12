@@ -36,3 +36,127 @@
 .dash-dropdown-wrapper .dash-options-list-option:not(:has(input[disabled])):focus-within {
     background: color-mix(in srgb, var(--Dash-Fill-Interactive-Strong) 8%, transparent);
 }
+
+/* create_tabs's tab bar. Its tabs share each row equally, so their labels wrap
+   alike, and are never narrower than 11.5rem, a word of 14 characters in the
+   theme's tab font (1rem, padded 1rem a side). How many tabs fit side by side
+   comes from the bar's width, by container queries on the dcc.Tabs parent;
+   how many a row then holds, so that the rows come out even, create_tabs sets
+   on the bar as --tabs-per-row-<fit> (see _tabs_per_row in components.py).
+   Where fewer than three fit, the tabs keep to one row that scrolls sideways,
+   and show-selected-tab.js keeps the selected tab in view.
+
+   Tabs and gaps take m * 11.5rem + (m - 1) * 0.75rem, so m tabs fit in a bar
+   (with its 2rem of padding) at least 12.25m + 1.25rem wide. */
+.datadash-tabs-parent {
+    container: datadash-tabs / inline-size;
+}
+
+.datadash-tabs-parent > .datadash-tabs {
+    --tabs-gap: 0.75rem;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: safe center;
+    gap: var(--tabs-gap);
+    padding: 0.25rem 1rem 0.75rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+/* One row, scrolling if it has to */
+.datadash-tabs-parent > .datadash-tabs > .tab {
+    flex: 1 0 11.5rem;
+    /* A word too long for its tab breaks rather than spill out of it */
+    overflow-wrap: anywhere;
+}
+
+/* With three tabs or more (datadash-tabs--scrolls) it has to, and its tabs
+   are sized to show one and a half, or two and a half from 2.5 * 11.5rem +
+   2 * 0.75rem + 2rem = 32.25rem, so that half a tab at the edge shows there
+   are more. Whole tabs filling the bar would look like all there are. */
+.datadash-tabs-parent > .datadash-tabs--scrolls > .tab {
+    flex: 0 0 max(11.5rem, calc((100% - var(--tabs-gap)) / 1.5));
+}
+
+@container datadash-tabs (min-width: 32.25rem) {
+    .datadash-tabs-parent > .datadash-tabs--scrolls > .tab {
+        flex-basis: max(11.5rem, calc((100% - 2 * var(--tabs-gap)) / 2.5));
+    }
+}
+
+/* Rows of --tabs-per-row equal tabs. A tab grows from just under its share of
+   the row, and no further, so a full row never overflows by a rounding error,
+   and a row of fewer tabs keeps them as wide as the others, centred. */
+@container datadash-tabs (min-width: 38rem) {
+    .datadash-tabs-parent > .datadash-tabs {
+        flex-wrap: wrap;
+    }
+
+    .datadash-tabs-parent > .datadash-tabs > .tab {
+        --tab-share: calc(
+            (100% - (var(--tabs-per-row) - 1) * var(--tabs-gap)) / var(--tabs-per-row)
+        );
+        flex: 1 0 calc(var(--tab-share) - 1px);
+        max-width: var(--tab-share);
+    }
+}
+
+@container datadash-tabs (min-width: 38rem) {
+    .datadash-tabs-parent > .datadash-tabs {
+        --tabs-per-row: var(--tabs-per-row-3);
+    }
+}
+
+@container datadash-tabs (min-width: 50.25rem) {
+    .datadash-tabs-parent > .datadash-tabs {
+        --tabs-per-row: var(--tabs-per-row-4);
+    }
+}
+
+@container datadash-tabs (min-width: 62.5rem) {
+    .datadash-tabs-parent > .datadash-tabs {
+        --tabs-per-row: var(--tabs-per-row-5);
+    }
+}
+
+@container datadash-tabs (min-width: 74.75rem) {
+    .datadash-tabs-parent > .datadash-tabs {
+        --tabs-per-row: var(--tabs-per-row-6);
+    }
+}
+
+@container datadash-tabs (min-width: 87rem) {
+    .datadash-tabs-parent > .datadash-tabs {
+        --tabs-per-row: var(--tabs-per-row-7);
+    }
+}
+
+@container datadash-tabs (min-width: 99.25rem) {
+    .datadash-tabs-parent > .datadash-tabs {
+        --tabs-per-row: var(--tabs-per-row-8);
+    }
+}
+
+@container datadash-tabs (min-width: 111.5rem) {
+    .datadash-tabs-parent > .datadash-tabs {
+        --tabs-per-row: var(--tabs-per-row-9);
+    }
+}
+
+@container datadash-tabs (min-width: 123.75rem) {
+    .datadash-tabs-parent > .datadash-tabs {
+        --tabs-per-row: var(--tabs-per-row-10);
+    }
+}
+
+@container datadash-tabs (min-width: 136rem) {
+    .datadash-tabs-parent > .datadash-tabs {
+        --tabs-per-row: var(--tabs-per-row-11);
+    }
+}
+
+@container datadash-tabs (min-width: 148.25rem) {
+    .datadash-tabs-parent > .datadash-tabs {
+        --tabs-per-row: var(--tabs-per-row-12);
+    }
+}

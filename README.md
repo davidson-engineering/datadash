@@ -111,7 +111,7 @@ fig = BasicPlotBuilder().create_plot(
 | Function | Returns |
 | --- | --- |
 | `create_dashboard_header(title)`, `create_dashboard_footer(text)` | Page header (defaults to the theme's `dashboard_title`) and footer |
-| `create_tabs(children, id, value)`, `create_themed_tab(label, value)` | Tab bar (first tab selected unless `value` is given) and tabs (with the theme's tab icons) |
+| `create_tabs(children, id, value)`, `create_themed_tab(label, value)` | Tab bar (first tab selected unless `value` is given) and tabs (with the theme's tab icons). The tabs share each row equally, never narrower than a word of 14 characters, and wrap onto as few rows as they fit in, as evenly as they can (nine tabs: five and four); where fewer than three fit side by side, they keep to one row that scrolls, with the selected tab in view. The layout is `assets/dash-components.css`'s, so a theme's `tab` and `tab_container` styles leave out widths, `display`, `gap` and wrapping |
 | `create_main_container(children)`, `create_body_container(children)`, `create_tab_layout(children)` | Page structure |
 | `create_graph_component(graph_id, figure, width)` | A themed `dcc.Graph` in a `dbc.Col` of the given width |
 | `construct_dash_table(table, table_id, max_width, cell_style, group_by)` | A read-only HTML table from a DataFrame, numbers right-aligned and floats rounded, with a sticky header. With `group_by`, a table per value of that column, captioned with it (theme style `table_section`), each scrolling on its own, all on one grid of columns (CSS subgrid), so the columns line up across them |
