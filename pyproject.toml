@@ -15,9 +15,12 @@ dependencies = [
 ]
 
 [dependency-groups]
-# construct_dash_table duck-types DataFrames; its tests build real ones
+# construct_dash_table duck-types DataFrames; its tests build real ones. The
+# tests of the page scripts in assets/ drive Chromium with Playwright
+# (uv run playwright install chromium)
 dev = [
     "pandas>=2.3.3",
+    "playwright>=1.63.0",
     "pyright[nodejs]==1.1.414",
     "pytest>=8.4.2",
     "ruff==0.16.9",

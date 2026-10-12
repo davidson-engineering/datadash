@@ -30,6 +30,8 @@ jobs:
         enable-cache: true
     - name: Install from the lock file
       run: uv sync --locked
+    - name: Install Chromium for the page scripts' tests
+      run: uv run playwright install --with-deps chromium
     - name: Lint
       run: uv run ruff check .
     - name: Type-check
@@ -46,5 +48,7 @@ jobs:
     - uses: astral-sh/setup-uv@v10.2.0
     - name: Install the newest allowed versions
       run: uv sync --upgrade
+    - name: Install Chromium for the page scripts' tests
+      run: uv run playwright install --with-deps chromium
     - name: Test
       run: uv run pytest

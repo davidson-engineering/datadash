@@ -238,10 +238,12 @@ class PlotFigure:
 
         Creates hidden traces on the secondary axis that can be toggled in the legend.
 
-        The axis is added to the existing figure in place, with the same layout
-        ``make_subplots(specs=[[{"secondary_y": True}]])`` would produce. Rebuilding
-        the figure as a subplot and copying the themed layout into it costs about
-        70 ms per figure, because Plotly validates the copy property by property.
+        The axis is added to the existing figure in place, rather than by rebuilding
+        it with ``make_subplots(specs=[[{"secondary_y": True}]])`` and copying the
+        themed layout into it, which costs about 70 ms per figure because Plotly
+        validates the copy property by property. Unlike that subplot's, the x-axis
+        spans the whole width, and the secondary axis is anchored to it, so its
+        labels sit in the right margin.
 
         Args:
             units: Label for the secondary axis (e.g., "rpm", "deg/s")
@@ -265,9 +267,12 @@ class PlotFigure:
         fig.add_traces(secondary_traces)
 
         axis_title = f"{title} [{units}]" if title else f"[{units}]"
+        # Anchored to the x-axis, on the plot area's right edge, its labels and
+        # title push only the right margin, and the y-axis's only the left one,
+        # so the dashboard can give charts stacked in a column the same margins
+        # (assets/align-plot-areas.js) and so the same plot area
         yaxis2 = {
-            "anchor": "free",
-            "autoshift": True,
+            "anchor": "x",
             "overlaying": "y",
             "side": "right",
             "showgrid": False,  # Disable gridlines for secondary axis
@@ -284,7 +289,7 @@ class PlotFigure:
             yaxis2["range"] = compute_overall_range(*secondary_y_data, margin=margin)
 
         fig.update_layout(
-            xaxis={"anchor": "y", "domain": [0.0, 0.94]},
+            xaxis={"anchor": "y", "domain": [0.0, 1.0]},
             yaxis={"anchor": "x", "domain": [0.0, 1.0]},
             yaxis2=yaxis2,
         )

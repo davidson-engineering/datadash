@@ -26,7 +26,7 @@ def test_secondary_axis_adds_hidden_scaled_copies_on_y2():
         np.testing.assert_allclose(trace.y, y[:, i] * 10.0)
 
 
-def test_secondary_axis_layout_matches_a_secondary_y_subplot():
+def test_secondary_axis_layout():
     fig, y = build({"units": "rpm", "scale": 10.0, "title": "Speed"})
     layout = fig.layout
 
@@ -35,7 +35,10 @@ def test_secondary_axis_layout_matches_a_secondary_y_subplot():
     assert layout.yaxis2.showgrid is False
     # Round ticks in its own units, not the primary axis's ticks converted
     assert layout.yaxis2.tickmode == "auto"
-    assert tuple(layout.xaxis.domain) == (0.0, 0.94)
+    # On the plot area's right edge, its labels in the right margin, which the
+    # dashboard lines up across stacked charts (assets/align-plot-areas.js)
+    assert layout.yaxis2.anchor == "x" and layout.yaxis2.autoshift is None
+    assert tuple(layout.xaxis.domain) == (0.0, 1.0)
     low, high = layout.yaxis2.range
     assert low <= (y * 10.0).min() and high >= (y * 10.0).max()
     # The theme's axis styling survives on the primary axes
