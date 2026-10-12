@@ -1,6 +1,6 @@
-# Lint and test against uv.lock on every push and pull request. A weekly run
-# re-resolves to the newest versions allowed by pyproject.toml, which is what
-# projects installing datadash get, to catch upstream breakage early.
+# Lint, type-check and test against uv.lock on every push and pull request. A
+# weekly run re-resolves to the newest versions allowed by pyproject.toml, which
+# is what projects installing datadash get, to catch upstream breakage early.
 
 name: CI
 
@@ -32,6 +32,8 @@ jobs:
       run: uv sync --locked
     - name: Lint
       run: uv run ruff check .
+    - name: Type-check
+      run: uv run pyright
     - name: Test
       run: uv run pytest
 

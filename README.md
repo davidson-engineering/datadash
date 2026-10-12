@@ -131,12 +131,19 @@ the assets folder and page title), then call `run(debug, port, host)`.
 uv sync            # installs datadash and the dev tools from uv.lock
 uv run pytest
 uv run ruff check .
+uv run pyright
 ```
 
-CI (`.github/workflows/ci.yml`) runs both against `uv.lock` on pushes to `main`
-and on every pull request. Weekly, or when started by hand, it also runs the
-tests (not ruff) against the newest dependency versions `pyproject.toml`
-allows.
+Pyright, pinned in the `dev` group, type-checks `datadash/` and `tests/` in
+standard mode, configured under `[tool.pyright]` in `pyproject.toml`. Plotly's
+trace properties and Dash's component props are not annotated, so tests read
+them from `to_plotly_json()`. Where a library's own annotations are wrong, the
+line carries a `# pyright: ignore[<rule>]` with the reason.
+
+CI (`.github/workflows/ci.yml`) runs all three against `uv.lock` on pushes to
+`main` and on every pull request. Weekly, or when started by hand, it also runs
+the tests (not ruff or pyright) against the newest dependency versions
+`pyproject.toml` allows.
 
 To work on datadash alongside an app that uses it, install your checkout into
 the app's environment for the session: `uv pip install -e ../datadash` from the

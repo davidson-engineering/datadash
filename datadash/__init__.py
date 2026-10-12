@@ -6,8 +6,56 @@ so ``import datadash`` stays cheap and does not load Dash or Plotly.
 
 from importlib import import_module
 from importlib.metadata import version
+from typing import TYPE_CHECKING
 
 __version__ = version("datadash")
+
+# What type checkers see of the names imported on first access below
+if TYPE_CHECKING:
+    from datadash.builders.content import (
+        ContentBuilder,
+        create_single_column_builder,
+        create_split_window_builder,
+        create_table_builder,
+        create_three_column_builder,
+        create_two_column_builder,
+    )
+    from datadash.builders.figure import PlotFigure3DAnimation
+    from datadash.builders.plot import (
+        BasicPlotBuilder,
+        CombinedPlotBuilder,
+        SubplotsPlotBuilder,
+    )
+    from datadash.builders.trace import (
+        create_trace_constructor,
+        get_plot_range,
+    )
+    from datadash.dashboard.base import DashboardApp
+    from datadash.dashboard.components import (
+        construct_dash_table,
+        create_body_container,
+        create_dashboard_footer,
+        create_dashboard_header,
+        create_filter_dropdown,
+        create_graph_component,
+        create_job_selector_dropdown,
+        create_main_container,
+        create_parameter_filter_dropdowns,
+        create_tab_layout,
+        create_tabs,
+        create_themed_tab,
+        filter_row_class_name,
+        parameter_filter_container_style,
+    )
+    from datadash.plots.registry import (
+        PlotMetadata,
+        PlotRegistry,
+        register_plot,
+    )
+    from datadash.themes.manager import (
+        get_theme_manager,
+        set_theme,
+    )
 
 _EXPORTS = {
     # Themes
@@ -49,7 +97,41 @@ _EXPORTS = {
     "parameter_filter_container_style": "datadash.dashboard.components",
 }
 
-__all__ = ["__version__", *_EXPORTS]
+__all__ = [
+    "__version__",
+    "get_theme_manager",
+    "set_theme",
+    "PlotMetadata",
+    "PlotRegistry",
+    "register_plot",
+    "BasicPlotBuilder",
+    "CombinedPlotBuilder",
+    "SubplotsPlotBuilder",
+    "PlotFigure3DAnimation",
+    "create_trace_constructor",
+    "get_plot_range",
+    "ContentBuilder",
+    "create_single_column_builder",
+    "create_split_window_builder",
+    "create_table_builder",
+    "create_three_column_builder",
+    "create_two_column_builder",
+    "DashboardApp",
+    "construct_dash_table",
+    "create_body_container",
+    "create_dashboard_footer",
+    "create_dashboard_header",
+    "create_filter_dropdown",
+    "create_graph_component",
+    "create_job_selector_dropdown",
+    "create_main_container",
+    "create_parameter_filter_dropdowns",
+    "create_tab_layout",
+    "create_tabs",
+    "create_themed_tab",
+    "filter_row_class_name",
+    "parameter_filter_container_style",
+]
 
 
 def __getattr__(name):

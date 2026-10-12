@@ -106,6 +106,11 @@ class FramesConstructor:
             _, _, _, resized_points = self.builder._prepare_xyzn(
                 resized_constructor, self.number_frames
             )
+            if resized_points is None:
+                raise ValueError(
+                    f"Animated trace '{constructor.name}' needs data of shape"
+                    " (points, time, space)"
+                )
             if constructor.is_mesh:
                 # A mesh's vertices are most of a figure's frames, and WebGL draws
                 # them in single precision anyway: send them so, in half the size
@@ -151,8 +156,8 @@ class FramesConstructor:
 
     def _build_first_frame(self) -> List[dict]:
         """Build the first frame with all traces in correct order."""
-        # Create ordered list based on original trace indices
-        ordered_traces = [None] * len(self.trace_constructors)
+        # Each trace by its original trace index
+        ordered_traces: dict[int, dict] = {}
 
         # Place animated traces at frame 0
         for key, template_info in self.frame_templates.items():
@@ -183,7 +188,7 @@ class FramesConstructor:
             trace_index = self.trace_indices[key]
             ordered_traces[trace_index] = self.static_frame_traces[static_idx]
 
-        return ordered_traces
+        return [ordered_traces[index] for index in range(len(self.trace_constructors))]
 
     def _build_animated_frame(self, frame_idx: int) -> List[dict]:
         """Build frame with only animated traces."""

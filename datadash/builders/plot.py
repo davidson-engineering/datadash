@@ -3,13 +3,14 @@
 # 2023/01/23
 # Davidson Engineering Ltd. © 2023
 
+from collections.abc import Iterable
 from typing import Union
 
 import numpy as np
-from mergedeep import merge
 from plotly.colors import sample_colorscale
 
 from ..themes.manager import get_theme_manager
+from ..utils import merge
 from .figure import CombinedAxisFigure, PlotFigure, PlotFigure3D, SubplotsFigure
 from .layout import PlotLayoutBuilder
 
@@ -25,7 +26,7 @@ from .trace import (
 def create_combined_traces(
     x: Union[np.ndarray, list],
     y: Union[np.ndarray, list],
-    headers: list | None = None,
+    headers: Iterable[str] | None = None,
     hover_template: str | None = None,
 ):
     """
@@ -52,9 +53,9 @@ def create_combined_traces(
         y = y[:, np.newaxis]
 
     # Validate input shapes
-    if len(y.shape) != 2:
+    if y.ndim != 2:
         raise ValueError("y must be 1D or 2D")
-    if len(x.shape) > 2:
+    if x.ndim not in (1, 2):
         raise ValueError("x must be 1D or 2D")
 
     n_cols = y.shape[1]
@@ -70,7 +71,7 @@ def create_combined_traces(
         )
 
     # Handle 1D x by tiling to match y's shape
-    if len(x.shape) == 1:
+    if x.ndim == 1:
         x = np.tile(x[:, np.newaxis], (1, n_cols))
     elif x.shape[1] != n_cols:
         raise ValueError(
@@ -88,15 +89,7 @@ def create_combined_traces(
     # Apply hover template if provided
     if hover_template:
         for trace in traces.values():
-            props = (
-                trace.properties.to_dict()
-                if hasattr(trace.properties, "to_dict")
-                else trace.properties
-                if isinstance(trace.properties, dict)
-                else {}
-            )
-            props["hovertemplate"] = hover_template
-            trace.properties = props
+            trace.properties["hovertemplate"] = hover_template
 
     return traces
 

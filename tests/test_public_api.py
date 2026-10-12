@@ -1,5 +1,7 @@
 """The top-level names are the contract with dashboards built on datadash."""
 
+import ast
+import inspect
 import subprocess
 import sys
 
@@ -12,6 +14,25 @@ import datadash
 @pytest.mark.parametrize("name", datadash.__all__)
 def test_public_name_resolves(name):
     assert getattr(datadash, name) is not None
+
+
+def test_type_checkers_see_every_public_name():
+    # __all__ and the TYPE_CHECKING imports are spelled out for type checkers,
+    # which cannot follow __getattr__; both must match _EXPORTS
+    assert datadash.__all__ == ["__version__", *datadash._EXPORTS]
+    tree = ast.parse(inspect.getsource(datadash))
+    (type_checking,) = (
+        node
+        for node in tree.body
+        if isinstance(node, ast.If) and ast.unparse(node.test) == "TYPE_CHECKING"
+    )
+    imported = {
+        alias.name: node.module
+        for node in type_checking.body
+        if isinstance(node, ast.ImportFrom)
+        for alias in node.names
+    }
+    assert imported == datadash._EXPORTS
 
 
 def test_import_does_not_load_dash():

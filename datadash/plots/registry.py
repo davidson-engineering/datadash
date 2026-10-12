@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -21,11 +21,7 @@ class PlotMetadata:
     title: str
     category: str
     description: Optional[str] = None
-    requires: List[str] = None
-
-    def __post_init__(self):
-        if self.requires is None:
-            self.requires = []
+    requires: List[str] = field(default_factory=list)
 
 
 class PlotRegistry:

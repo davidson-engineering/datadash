@@ -1,4 +1,17 @@
 import itertools
+from collections.abc import Mapping, MutableMapping
+from typing import cast
+
+import mergedeep
+
+
+def merge[M: MutableMapping](destination: M, *sources: Mapping) -> M:
+    """Deep-merge sources into destination, as mergedeep.merge, and return destination.
+
+    mergedeep annotates its return as any MutableMapping, though it returns the
+    destination it was given; this keeps the destination's type.
+    """
+    return cast(M, mergedeep.merge(destination, *sources))
 
 
 def interleave(*a):

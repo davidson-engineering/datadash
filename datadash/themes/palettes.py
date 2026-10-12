@@ -5,11 +5,16 @@
 
 from __future__ import annotations
 
+import colorsys
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib.colors as mcolors
-import numpy as np
+
+
+def _hsv_to_hex(hue: float, saturation: float, value: float) -> str:
+    """A color given by its hue, saturation and value, each in [0, 1], as hex."""
+    return mcolors.to_hex(colorsys.hsv_to_rgb(hue, saturation, value))
 
 
 class ColorPalette(ABC):
@@ -61,8 +66,7 @@ class StaticPalette(ColorPalette):
             return self._interpolate_across_palette(count)
 
         # If we have more colors than requested, sample evenly from the palette
-        if count < len(self.colors):
-            return self._sample_from_palette(count)
+        return self._sample_from_palette(count)
 
     def _interpolate_hsv(self, start_color: str, end_color: str, count: int) -> Tuple[str, ...]:
         """Interpolate between start and end colors in HSV space."""
@@ -87,11 +91,7 @@ class StaticPalette(ColorPalette):
             s_interpolated = start_hsv[1] + (end_hsv[1] - start_hsv[1]) * t
             v_interpolated = start_hsv[2] + (end_hsv[2] - start_hsv[2]) * t
 
-            # Convert back to RGB then hex
-            interpolated_hsv = np.array([h_interpolated, s_interpolated, v_interpolated])
-            interpolated_rgb = mcolors.hsv_to_rgb(interpolated_hsv)
-            hex_color = mcolors.to_hex(interpolated_rgb)
-            colors.append(hex_color)
+            colors.append(_hsv_to_hex(h_interpolated, s_interpolated, v_interpolated))
 
         return tuple(colors)
 
@@ -186,10 +186,7 @@ class StaticPalette(ColorPalette):
         s_interpolated = start_hsv[1] + (end_hsv[1] - start_hsv[1]) * position
         v_interpolated = start_hsv[2] + (end_hsv[2] - start_hsv[2]) * position
 
-        # Convert back to RGB then hex
-        interpolated_hsv = np.array([h_interpolated, s_interpolated, v_interpolated])
-        interpolated_rgb = mcolors.hsv_to_rgb(interpolated_hsv)
-        return mcolors.to_hex(interpolated_rgb)
+        return _hsv_to_hex(h_interpolated, s_interpolated, v_interpolated)
 
 
 class GeneratedPalette(ColorPalette):
@@ -225,10 +222,7 @@ class GeneratedPalette(ColorPalette):
         colors = []
         for i in range(count):
             hue = (base_hue + (i * golden_angle / 360.0)) % 1.0
-            hsv = np.array([hue, saturation, value])
-            rgb = mcolors.hsv_to_rgb(hsv)
-            hex_color = mcolors.to_hex(rgb)
-            colors.append(hex_color)
+            colors.append(_hsv_to_hex(hue, saturation, value))
 
         return tuple(colors)
 
@@ -243,10 +237,7 @@ class GeneratedPalette(ColorPalette):
         for i in range(count):
             t = i / (count - 1) if count > 1 else 0
             value = value_start + (value_end - value_start) * t
-            hsv = np.array([base_hue, saturation, value])
-            rgb = mcolors.hsv_to_rgb(hsv)
-            hex_color = mcolors.to_hex(rgb)
-            colors.append(hex_color)
+            colors.append(_hsv_to_hex(base_hue, saturation, value))
 
         return tuple(colors)
 
@@ -276,10 +267,7 @@ class GeneratedPalette(ColorPalette):
                 saturation_factor = 0.7 + (0.3 * (i - mid_point) / (count - mid_point))
                 current_saturation = saturation * saturation_factor
 
-            hsv = np.array([hue, current_saturation, value])
-            rgb = mcolors.hsv_to_rgb(hsv)
-            hex_color = mcolors.to_hex(rgb)
-            colors.append(hex_color)
+            colors.append(_hsv_to_hex(hue, current_saturation, value))
 
         return tuple(colors)
 

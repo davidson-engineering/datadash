@@ -4,6 +4,7 @@
 # Davidson Engineering Ltd. © 2023
 
 import logging
+from typing import Any
 
 from ..themes.manager import get_theme_manager
 from .trace import get_plot_range
@@ -63,6 +64,13 @@ class PlotLayoutBuilder:
             layout[key] = value
         return layout
 
+    @staticmethod
+    def _data_ranges(x, y, margin):
+        """The x and y data's ranges, y's widened by the margin."""
+        if x is None or y is None:
+            raise ValueError("x and y are needed to compute the plot's ranges")
+        return get_plot_range([x, y], margins=[0, margin])
+
     @classmethod
     def _create_plot_layout(
         cls,
@@ -86,7 +94,7 @@ class PlotLayoutBuilder:
 
         # === BASIC ===
         if mode == "basic":
-            layout = {
+            layout: dict[str, Any] = {
                 "title_text": f"{title} [{y_units}]" if y_units else title,
                 "xaxis_title": f"{x_title} [{x_units}]" if x_units else x_title,
                 "yaxis_title": f"{y_title} [{y_units}]" if y_units else y_title,
@@ -101,11 +109,12 @@ class PlotLayoutBuilder:
 
         # === COMBINED ===
         if mode == "combined":
-            _x_range, _y_range = get_plot_range([x, y], margins=[0, margin])
-            if x_range is None:
-                x_range = _x_range
-            if y_range is None:
-                y_range = _y_range
+            if x_range is None or y_range is None:
+                _x_range, _y_range = cls._data_ranges(x, y, margin)
+                if x_range is None:
+                    x_range = _x_range
+                if y_range is None:
+                    y_range = _y_range
             layout = {
                 "title_text": f"{title}",
                 # "title_text": f"{title} [{y_units}]" if y_units else title,
@@ -121,7 +130,7 @@ class PlotLayoutBuilder:
         # === SUBPLOTS ===
         if mode == "subplots":
             if yrange is None:
-                _, yrange = get_plot_range([x, y], margins=[0, margin])
+                _, yrange = cls._data_ranges(x, y, margin)
             layout = {
                 "title_text": f"{title} [{units}]" if units else title,
                 "xaxis3_title": "Time [s]",
