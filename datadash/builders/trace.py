@@ -14,15 +14,19 @@ Environment Variables:
 import logging
 import os
 import warnings
-from dataclasses import dataclass
+from collections.abc import Sequence
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
 import plotly.graph_objects as go
-from mergedeep import merge
 
 from ..themes.manager import get_theme_manager
+from ..utils import merge
+
+# Every kind of trace a TraceBuilder draws
+PlotlyTrace = Union[go.Scatter, go.Scattergl, go.Scatter3d, go.Mesh3d]
 
 # from ..utils import repeat, tile
 
@@ -39,7 +43,9 @@ def points_to_xyz(points, closed=False):
     return dict(zip("xyz", zip(*points, strict=False), strict=False))
 
 
-def get_plot_range(*data: list[np.ndarray], margins=None):
+def get_plot_range(data: Sequence[npt.ArrayLike], margins: Sequence[float] | None = None):
+    """Each axis's (min, max), widened by its margin times the axis's largest magnitude."""
+
     def get_range(axis, margin):
         axis_min = np.min(axis)
         axis_max = np.max(axis)
@@ -51,7 +57,7 @@ def get_plot_range(*data: list[np.ndarray], margins=None):
 
     if margins is None:
         return tuple(get_range(axis, 0) for axis in data)
-    return tuple(get_range(axis, margin) for axis, margin in zip(*data, margins, strict=False))
+    return tuple(get_range(axis, margin) for axis, margin in zip(data, margins, strict=False))
 
 
 def points_to_xyz_arrays(points):
@@ -93,25 +99,27 @@ class TraceConstructor:
 
     Attributes:
         name (str): Trace name in hierarchical format (e.g., "center_gravity.proximal.0")
-        data (npt.ArrayLike): Trace point data
-        time (Optional[npt.ArrayLike]): Time data for animated traces
+        data (np.ndarray): Trace point data
+        time (Optional[np.ndarray]): Time data for animated traces
         closed (bool): Whether the trace should be closed (connect last to first point)
         static (bool): Whether this is a static trace (doesn't change with animation)
-        properties (Optional[Dict[str, Any]]): Minimal properties (e.g., visibility)
+        properties (Dict[str, Any]): Minimal properties (e.g., visibility)
         number_frames (Optional[int]): Target number of frames for animation resizing
-        faces (Optional[npt.ArrayLike]): For a mesh, its triangles as indices into
+        faces (Optional[np.ndarray]): For a mesh, its triangles as indices into
             its points, shape (F, 3). The points are then the mesh's vertices, and
             an animated mesh moves its vertices from frame to frame.
+
+    create_trace_constructor() takes any array-like data and checks its shape.
     """
 
     name: str
-    data: npt.ArrayLike
-    time: Optional[npt.ArrayLike] = None
+    data: np.ndarray
+    time: Optional[np.ndarray] = None
     closed: bool = False
     static: bool = False
-    properties: Optional[Dict[str, Any]] = None
+    properties: Dict[str, Any] = field(default_factory=dict)
     number_frames: Optional[int] = None
-    faces: Optional[npt.ArrayLike] = None
+    faces: Optional[np.ndarray] = None
 
     def __post_init__(self):
         """Post-initialization processing."""
@@ -125,10 +133,6 @@ class TraceConstructor:
 
         if self.faces is not None:
             self.faces = _validated_faces(self.name, self.faces, len(self.data))
-
-        # Initialize properties if None
-        if self.properties is None:
-            self.properties = {}
 
         # Validate name format
         if not self.name or not isinstance(self.name, str):
@@ -176,21 +180,13 @@ class TraceConstructor:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation for TraceBuilder."""
-        # Handle properties conversion
-        properties_dict = {}
-        if self.properties:
-            if hasattr(self.properties, "to_dict"):
-                properties_dict = self.properties.to_dict()
-            else:
-                properties_dict = self.properties.copy()
-
         trace = {
             "name": self.name,
             "data": self.data,
             "time": self.time,
             "closed": self.closed,
             "static": self.static,
-            "properties": properties_dict,
+            "properties": self.properties.copy(),
         }
         # Only a mesh has faces, so functions unpacking a line's constructor
         # (points_to_traces(**constructor)) need not take them
@@ -241,7 +237,7 @@ class TraceConstructor:
 
 def build_traces_from_constructors(
     constructors: Union[List[TraceConstructor], Dict[str, TraceConstructor]],
-) -> List[Union[go.Scatter, go.Scatter3d]]:
+) -> List[PlotlyTrace]:
     """
     Convenience function to build multiple Plotly traces from constructors.
 
@@ -262,14 +258,14 @@ def build_traces_from_constructors(
 
 def build_traces_with_themes(
     constructors: Union[List[TraceConstructor], Dict[str, TraceConstructor]],
-) -> List[go.Scatter3d]:
+) -> List[PlotlyTrace]:
     """Build plotly traces from new TraceConstructor objects with theme support.
 
     Args:
         constructors: List or dict of new TraceConstructor instances
 
     Returns:
-        List[go.Scatter3d]: List of plotly traces with theme styling applied
+        List[PlotlyTrace]: List of plotly traces with theme styling applied
     """
     return build_traces_from_constructors(constructors)
 
@@ -315,23 +311,21 @@ def create_trace_constructor(
     # Handle properties parameter and kwargs
     if properties is None:
         properties = kwargs
-    elif isinstance(properties, dict) and kwargs:
+    elif kwargs:
         # Merge properties dict with kwargs
         properties = {**properties, **kwargs}
-    elif hasattr(properties, "to_dict") and kwargs:
-        # Convert properties object to dict and merge with kwargs
-        properties = {**properties.to_dict(), **kwargs}
 
     # Handle display_name -> name conversion at source
-    if isinstance(properties, dict) and "display_name" in properties:
+    if "display_name" in properties:
         properties = properties.copy()
         properties["name"] = properties.pop("display_name")
 
-    # Convert to numpy array for consistent processing (only if needed)
-    if not isinstance(data, np.ndarray):
-        data = np.asarray(data)
-    else:
-        data = data  # Already a numpy array, no conversion needed
+    # Convert to numpy array for consistent processing
+    data = np.asarray(data)
+    if time is not None:
+        time = np.asarray(time)
+    if faces is not None:
+        faces = np.asarray(faces)
 
     # Validation: static traces with time
     if static and time is not None:
@@ -483,7 +477,7 @@ class TraceBuilder:
         self,
         constructor: TraceConstructor,
         number_frames: Optional[int] = None,
-    ) -> Union[go.Scatter, go.Scatter3d, go.Mesh3d]:
+    ) -> PlotlyTrace:
         """
         Build a single Plotly trace from a TraceConstructor object.
 
@@ -493,7 +487,8 @@ class TraceBuilder:
                 number of frames.
 
         Returns:
-            go.Scatter, go.Scatter3d or go.Mesh3d: A Plotly trace ready for plotting.
+            go.Scatter, go.Scattergl, go.Scatter3d or go.Mesh3d: A Plotly trace
+            ready for plotting.
         """
         # Always use theme resolution
         props = self._resolve_properties(constructor)
@@ -502,7 +497,7 @@ class TraceBuilder:
         x, y, z, resized_points = self._prepare_xyzn(constructor, number_frames)
 
         # Create Plotly trace
-        if constructor.is_mesh:
+        if constructor.faces is not None:
             trace = self._create_mesh(x, y, z, constructor.faces, props)
         else:
             trace = self._create_trace(x, y, z, props)
@@ -513,9 +508,7 @@ class TraceBuilder:
 
         return trace
 
-    def build_traces(
-        self, constructors: List[TraceConstructor]
-    ) -> List[Union[go.Scatter, go.Scatter3d]]:
+    def build_traces(self, constructors: List[TraceConstructor]) -> List[PlotlyTrace]:
         """
         Build multiple Plotly traces from a list of TraceConstructor objects.
 
@@ -525,7 +518,7 @@ class TraceBuilder:
         Returns:
             List of Plotly traces.
         """
-        traces: List[Union[go.Scatter, go.Scatter3d]] = []
+        traces: List[PlotlyTrace] = []
         for c in constructors:
             try:
                 traces.append(self.build_trace(c))

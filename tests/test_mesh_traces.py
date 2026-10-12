@@ -24,6 +24,15 @@ def _builder():
     return TraceBuilder(theme_manager=ThemeManager("default"))
 
 
+def _props(figure_object) -> dict:
+    """A trace's or frame's properties, as Plotly sends them to the browser.
+
+    Plotly's property getters are unannotated, so a type checker sees each
+    one as a union of everything Plotly stores (None included).
+    """
+    return figure_object.to_plotly_json()
+
+
 def test_a_static_mesh_is_drawn_as_a_mesh3d_of_its_vertices_and_faces():
     constructor = create_trace_constructor(
         name="part", data=_VERTICES, faces=_FACES, static=True, color="#123456"
@@ -32,20 +41,21 @@ def test_a_static_mesh_is_drawn_as_a_mesh3d_of_its_vertices_and_faces():
     trace = _builder().build_trace(constructor)
 
     assert isinstance(trace, go.Mesh3d)
-    np.testing.assert_array_equal(np.column_stack((trace.x, trace.y, trace.z)), _VERTICES)
-    np.testing.assert_array_equal(np.column_stack((trace.i, trace.j, trace.k)), _FACES)
-    assert trace.color == "#123456"
+    props = _props(trace)
+    np.testing.assert_array_equal(np.column_stack((props["x"], props["y"], props["z"])), _VERTICES)
+    np.testing.assert_array_equal(np.column_stack((props["i"], props["j"], props["k"])), _FACES)
+    assert props["color"] == "#123456"
 
 
 def test_a_mesh_takes_the_mesh_defaults_not_the_line_defaults():
     """The default trace's markers, lines and mode are not properties of a Mesh3d."""
     constructor = create_trace_constructor(name="part", data=_VERTICES, faces=_FACES, static=True)
 
-    trace = _builder().build_trace(constructor)
+    props = _props(_builder().build_trace(constructor))
 
     mesh_defaults = ThemeManager("default").get_plotly_theme()["traces"]["mesh"]
-    assert trace.lighting.ambient == mesh_defaults["lighting"]["ambient"]
-    assert trace.flatshading is False
+    assert props["lighting"]["ambient"] == mesh_defaults["lighting"]["ambient"]
+    assert props["flatshading"] is False
 
 
 def test_a_mesh_s_theme_entry_is_merged_over_the_mesh_defaults():
@@ -56,10 +66,10 @@ def test_a_mesh_s_theme_entry_is_merged_over_the_mesh_defaults():
         name="part.left", data=_VERTICES, faces=_FACES, static=True
     )
 
-    trace = TraceBuilder(theme_manager=theme).build_trace(constructor)
+    props = _props(TraceBuilder(theme_manager=theme).build_trace(constructor))
 
-    assert trace.color == "#abcdef"
-    assert trace.lighting.ambient is not None
+    assert props["color"] == "#abcdef"
+    assert props["lighting"]["ambient"] is not None
 
 
 def test_a_closed_mesh_is_not_closed_like_a_line():
@@ -69,7 +79,7 @@ def test_a_closed_mesh_is_not_closed_like_a_line():
 
     trace = _builder().build_trace(constructor)
 
-    assert len(trace.x) == len(_VERTICES)
+    assert len(_props(trace)["x"]) == len(_VERTICES)
 
 
 @pytest.mark.parametrize(
@@ -94,11 +104,11 @@ def test_an_animated_mesh_moves_its_vertices_and_keeps_its_faces():
 
     built = FramesConstructor({"part": constructor}, number_frames=frames).build_frames()
 
-    first, last = built[0].data[0], built[-1].data[0]
-    assert isinstance(first, go.Mesh3d)
-    np.testing.assert_array_equal(np.column_stack((first.i, first.j, first.k)), _FACES)
+    first, last = _props(built[0])["data"][0], _props(built[-1])["data"][0]
+    assert first["type"] == "mesh3d"
+    np.testing.assert_array_equal(np.column_stack((first["i"], first["j"], first["k"])), _FACES)
     np.testing.assert_allclose(
-        np.column_stack((last.x, last.y, last.z)), _VERTICES + (1, 0, 0), rtol=1e-6
+        np.column_stack((last["x"], last["y"], last["z"])), _VERTICES + (1, 0, 0), rtol=1e-6
     )
 
 
@@ -112,7 +122,7 @@ def test_after_the_first_frame_a_mesh_s_frames_carry_only_its_vertices():
     built = FramesConstructor({"part": constructor}, number_frames=frames).build_frames()
 
     for frame in built[1:]:
-        mesh = frame.data[0].to_plotly_json()
+        mesh = _props(frame)["data"][0]
         assert set(mesh) == {"type", "x", "y", "z"}
 
 
@@ -126,7 +136,7 @@ def test_an_animated_mesh_s_vertices_are_sent_in_single_precision():
     built = FramesConstructor({"part": constructor}, number_frames=frames).build_frames()
 
     for frame in built:
-        assert np.asarray(frame.data[0].x).dtype == np.float32
+        assert np.asarray(_props(frame)["data"][0]["x"]).dtype == np.float32
 
 
 def test_an_animated_figure_mixes_meshes_and_lines_and_spans_both():
@@ -162,4 +172,4 @@ def test_a_builder_takes_the_theme_set_last(monkeypatch):
         {"plotly": {"traces": {"part": {"color": "#abcdef"}}}}
     )
 
-    assert TraceBuilder().build_trace(constructor).color == "#abcdef"
+    assert _props(TraceBuilder().build_trace(constructor))["color"] == "#abcdef"

@@ -7,9 +7,9 @@ import math
 
 import dash_bootstrap_components as dbc
 from dash import dcc, html
-from mergedeep import merge
 
 from ..themes.manager import get_theme_manager
+from ..utils import merge
 
 # Enough precision for any engineering value, few enough digits to drop binary
 # float noise (0.16499999999999998 -> 0.165) that would otherwise be displayed
@@ -206,7 +206,7 @@ def create_graph_component(graph_id, figure, width=12, style=None, config=None):
     theme = get_theme_manager()
 
     graph_style = theme.get_component_style("graph_container").copy()
-    graph_config = {
+    graph_config: dcc.Graph.Config = {
         "displayModeBar": False,
         "displaylogo": False,
         "modeBarButtonsToRemove": ["pan2d", "lasso2d"],

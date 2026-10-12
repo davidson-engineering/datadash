@@ -13,6 +13,8 @@ assets_path = Path(__file__).resolve().parent.parent / "assets"
 
 
 class DashboardApp(ABC):
+    # The Dash app, which a subclass makes (as _create_app() does) in initialize()
+    app: dash.Dash
 
     def run(self, debug=False, port=8050, host="127.0.0.1"):
         """Run the dashboard server.
@@ -26,8 +28,8 @@ class DashboardApp(ABC):
         return self
 
     @abstractmethod
-    def initialize(self):
-        pass
+    def initialize(self) -> None:
+        """Make the Dash app, self.app, and its layout and callbacks."""
 
     def _create_app(self):
         from ..themes.manager import get_theme_manager

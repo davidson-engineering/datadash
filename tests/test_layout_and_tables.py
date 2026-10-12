@@ -6,6 +6,15 @@ from datadash.builders.figure import PlotFigure
 from datadash.dashboard.components import _column_alignment, construct_dash_table
 
 
+def _props(component) -> dict:
+    """A Dash component's props, as Dash sends them to the browser.
+
+    Dash components set their props dynamically, so a type checker knows only
+    their children, as possibly None.
+    """
+    return component.to_plotly_json()["props"]
+
+
 def test_theme_supplies_defaults_but_never_overrides_the_figure():
     figure = PlotFigure(
         trace_constructor={}, layout={"showlegend": False, "xaxis": {"range": [0, 1]}}
@@ -37,7 +46,7 @@ def test_tables_get_unique_ids_and_align_by_type():
     table = construct_dash_table(
         pd.DataFrame({"Metric": ["x"], "Mean": [1.0]}), table_id="results-a"
     )
-    assert table.id == "results-a"
+    assert _props(table)["id"] == "results-a"
     header, rows = cells(table)
     assert [th.children for th in header] == ["Metric", "Mean"]
     for row in [header, *rows]:
@@ -47,7 +56,8 @@ def test_tables_get_unique_ids_and_align_by_type():
 def test_header_stays_pinned_while_the_table_scrolls():
     table = construct_dash_table(pd.DataFrame({"Metric": ["x"]}), max_width="760px")
     header, _ = cells(table)
-    assert table.style["overflowY"] == "auto" and table.style["maxWidth"] == "760px"
+    style = _props(table)["style"]
+    assert style["overflowY"] == "auto" and style["maxWidth"] == "760px"
     assert header[0].style["position"] == "sticky" and header[0].style["top"] == 0
 
 
@@ -88,7 +98,7 @@ def sections(grid):
 def test_sections_follow_the_order_their_values_first_appear():
     grid = construct_dash_table(SECTIONED, table_id="results", group_by="Category")
 
-    assert grid.id == "results"
+    assert _props(grid)["id"] == "results"
     assert [(caption, len(body)) for caption, _, body in sections(grid)] == [
         ("Kinematics", 2),
         ("Dynamics", 1),
@@ -103,11 +113,11 @@ def test_sections_follow_the_order_their_values_first_appear():
 def test_sections_share_one_grid_of_columns():
     """Each section's pane is a subgrid of the one grid, so the columns of every
     section are as wide as the widest entry of any."""
-    grid = construct_dash_table(SECTIONED, group_by="Category")
+    grid = _props(construct_dash_table(SECTIONED, group_by="Category"))
 
-    assert grid.style["display"] == "grid"
-    assert grid.style["gridTemplateColumns"] == "repeat(3, auto)"
-    for table in grid.children:
+    assert grid["style"]["display"] == "grid"
+    assert grid["style"]["gridTemplateColumns"] == "repeat(3, auto)"
+    for table in grid["children"]:
         caption, pane = table.children
         assert table.style == {"display": "contents"}
         assert caption.style["gridColumn"] == pane.style["gridColumn"] == "1 / -1"
@@ -127,11 +137,11 @@ def test_sections_align_each_column_by_all_of_its_values():
 
 
 def test_each_section_scrolls_down_on_its_own_and_all_scroll_sideways_together():
-    grid = construct_dash_table(SECTIONED, max_width="100%", group_by="Category")
+    grid = _props(construct_dash_table(SECTIONED, max_width="100%", group_by="Category"))
 
-    assert grid.style["maxWidth"] == "100%" and grid.style["overflowX"] == "auto"
-    assert "maxHeight" not in grid.style and "overflowY" not in grid.style
-    for table in grid.children:
+    assert grid["style"]["maxWidth"] == "100%" and grid["style"]["overflowX"] == "auto"
+    assert "maxHeight" not in grid["style"] and "overflowY" not in grid["style"]
+    for table in grid["children"]:
         caption, pane = table.children
         header, *_ = pane.children
         assert pane.style["overflowY"] == "auto" and pane.style["maxHeight"] == "70vh"
@@ -143,9 +153,9 @@ def test_each_section_scrolls_down_on_its_own_and_all_scroll_sideways_together()
 
 def test_sections_say_what_part_of_a_table_each_element_is():
     """The grid lays the cells out, so their elements no longer show it."""
-    grid = construct_dash_table(SECTIONED, group_by="Category")
+    grid = _props(construct_dash_table(SECTIONED, group_by="Category"))
 
-    for table in grid.children:
+    for table in grid["children"]:
         _, pane = table.children
         header, *body = pane.children
         assert (table.role, pane.role, header.role) == ("table", "rowgroup", "row")

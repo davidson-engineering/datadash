@@ -6,17 +6,18 @@
 from __future__ import annotations
 
 import copy
+from typing import Any
 
 import numpy as np
 import plotly.graph_objects as go
-from mergedeep import merge
 from plotly.subplots import make_subplots
 
 from ..themes.manager import get_theme_manager
+from ..utils import merge
 from .trace import TraceConstructor
 
 
-def compute_ranges(*data: list[np.ndarray], margins=None):
+def compute_ranges(*data: np.ndarray, margins=None):
     """
     Compute min/max ranges for each axis given arrays.
     Optionally apply margins.
@@ -57,7 +58,7 @@ def compute_scene_ranges_animation(frames, margins=None):
     return compute_ranges(xs, ys, zs, margins=margins)
 
 
-def compute_overall_range(*data: list[np.ndarray], margin=0.0):
+def compute_overall_range(*data: np.ndarray, margin=0.0):
     """
     Compute a single global (min, max) across all provided arrays.
     """
@@ -68,7 +69,7 @@ def compute_overall_range(*data: list[np.ndarray], margin=0.0):
     return (float(axis_min - margin), float(axis_max + margin))
 
 
-def compute_plot_extents(data, margins: int | float | tuple[int | float] | None = None):
+def compute_plot_extents(data, margins: float | tuple[float, float, float] | None = None):
     if margins is None:
         margins = (0.0, 0.0, 0.0)
     if margins is not None and isinstance(margins, (int, float)):
@@ -92,7 +93,7 @@ def compute_plot_extents(data, margins: int | float | tuple[int | float] | None 
 
 
 def compute_plot_extents_animation(
-    frames, margins: int | float | tuple[int | float] | None = None
+    frames, margins: float | tuple[float, float, float] | None = None
 ):
     if margins is None:
         margins = (0.0, 0.0, 0.0)
@@ -127,11 +128,11 @@ def copy_trace(trace):
 class PlotFigure:
     def __init__(
         self,
-        layout=None,
-        trace_constructor=None,
-        settings=None,
+        layout: dict | None = None,
+        trace_constructor: dict[str, Any] | None = None,
+        settings: dict | None = None,
     ):
-        self.trace_constructor = trace_constructor
+        self.trace_constructor = trace_constructor if trace_constructor is not None else {}
 
         # Get theme manager
         theme = get_theme_manager()
@@ -162,20 +163,15 @@ class PlotFigure:
         else:
             self.layout = merged_layout
 
-        self._figure = None
+        self._figure: go.Figure | None = None
+        self._built_traces: dict[str, Any] = {}
         self._traces_built = False  # Track if traces have been built
         self._computed_layout = None  # Cache computed layout
 
     @property
-    def traces(self, trace_constructor=None):
+    def traces(self):
         # Only build traces if not already built (lazy loading)
         if not self._traces_built:
-            self.trace_constructor = (
-                self.trace_constructor
-                if trace_constructor is None
-                else trace_constructor
-            )
-
             # Use TraceBuilder for proper theme resolution
             from .trace import TraceBuilder
 
@@ -188,32 +184,6 @@ class PlotFigure:
             self._traces_built = True
 
         return self._built_traces
-
-    @traces.setter
-    def traces(self, trace_constructor):
-        self.trace_constructor = trace_constructor
-        # Reset lazy loading when traces are changed
-        self._traces_built = False
-        # Layout can be reused, only figure needs reset
-        self._figure = None
-
-    @property
-    def surfaces(self, surface_constructor=None):
-        self.surface_constructor = (
-            self.surface_constructor
-            if surface_constructor is None
-            else surface_constructor
-        )
-
-        # Use TraceBuilder for proper theme resolution
-        from .trace import TraceBuilder
-
-        builder = TraceBuilder()
-
-        return {
-            key: builder.build_trace(constructor)
-            for key, constructor in self.surface_constructor.items()
-        }
 
     def pattern_properties(self, properties, lookups, lookin=None, exclusions=None):
         """Apply property patterning to layout properties.
@@ -263,7 +233,7 @@ class PlotFigure:
 
         return self
 
-    def add_secondary_axis(self, units: str, scale: float = 1, title: str = None):
+    def add_secondary_axis(self, units: str, scale: float = 1, title: str | None = None):
         """Add a secondary y-axis with different units and scale.
 
         Creates hidden traces on the secondary axis that can be toggled in the legend.
@@ -349,12 +319,6 @@ class PlotFigure:
 
         return self._figure
 
-    @figure.setter
-    def figure(self, fig):
-        self._figure = fig
-        # Don't reset layout cache when figure is manually set
-        # Layout cache can still be reused
-
     def _fast_layout_merge(self, target, source):
         """Fill in theme defaults that the figure's own layout doesn't set.
 
@@ -428,7 +392,7 @@ class PlotFigure3D(PlotFigure):
 
         return self
 
-    def add_secondary_axis(self, units: str, scale: float = 1, title: str = None):
+    def add_secondary_axis(self, units: str, scale: float = 1, title: str | None = None):
         """Secondary axis is not supported for 3D plots."""
         raise NotImplementedError("Secondary axis is not supported for 3D plots")
 
@@ -536,8 +500,8 @@ class SubplotsFigure(PlotFigure):
             **kwargs,
         )
         # Use the actual max row/col values from trace constructor
-        self.rows = max(kwargs["trace_constructor"]["rows"])
-        self.cols = max(kwargs["trace_constructor"]["cols"])
+        self.rows = max(self.trace_constructor["rows"])
+        self.cols = max(self.trace_constructor["cols"])
         self.subplots = subplots_contructor or {}
 
     @property
@@ -584,7 +548,7 @@ class SubplotsFigure(PlotFigure):
             "cols": self.trace_constructor["cols"],
         }
 
-    def add_secondary_axis(self, units: str, scale: float = 1, title: str = None):
+    def add_secondary_axis(self, units: str, scale: float = 1, title: str | None = None):
         """Add secondary y-axis to all subplots with different units and scale.
 
         Creates secondary y-axes for each subplot that can display the same data

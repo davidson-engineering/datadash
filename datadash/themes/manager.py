@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any, Dict, Tuple
 
 import yaml
-from mergedeep import merge
+
+from ..utils import merge
 
 # Import palette system
 from .palettes import get_palette_registry
@@ -22,8 +23,8 @@ class ThemeManager:
     def __init__(
         self,
         theme_name: str = "default",
-        overrides_config: Dict[str, Any] = None,
-        custom_config: Dict[str, Any] = None,  # Deprecated - use overrides_config
+        overrides_config: Dict[str, Any] | None = None,
+        custom_config: Dict[str, Any] | None = None,  # Deprecated - use overrides_config
     ):
         self.theme_name = theme_name
         self.palette_registry = get_palette_registry()
@@ -39,7 +40,7 @@ class ThemeManager:
         self._palette_color_cache = {}
 
     def _load_hierarchical_theme_config(
-        self, theme_name: str, overrides_config: Dict[str, Any] = None
+        self, theme_name: str, overrides_config: Dict[str, Any] | None = None
     ) -> Dict[str, Any]:
         """Load theme configuration using three-level hierarchy.
 
@@ -193,7 +194,7 @@ class ThemeManager:
         return self.theme_config.get("fonts", {})
 
     @property
-    def icons(self) -> Dict[str, str]:
+    def icons(self) -> Dict[str, Any]:
         return self.theme_config.get("icons", {})
 
     @property
@@ -238,7 +239,9 @@ class ThemeManager:
         self._plotly_theme_cache = plotly_theme
         return plotly_theme
 
-    def get_trace_theme(self, trace_name: str, default: str = "default") -> Dict[str, Any]:
+    def get_trace_theme(
+        self, trace_name: str, default: str = "default"
+    ) -> Dict[str, Any] | None:
         """Get trace-specific theme configuration, merged over the trace defaults.
 
         Args:
@@ -561,7 +564,7 @@ _theme_manager = None
 
 
 def get_theme_manager(
-    theme_name: str = None, overrides_config: Dict[str, Any] = None
+    theme_name: str | None = None, overrides_config: Dict[str, Any] | None = None
 ) -> ThemeManager:
     """Get the global theme manager instance with optional overrides.
 
@@ -584,7 +587,7 @@ def get_theme_manager(
     return _theme_manager
 
 
-def set_theme(theme_name: str, overrides_config: Dict[str, Any] = None):
+def set_theme(theme_name: str, overrides_config: Dict[str, Any] | None = None):
     """Switch to a different theme with optional overrides.
 
     Args:

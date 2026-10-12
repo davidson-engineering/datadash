@@ -16,6 +16,15 @@ from datadash.dashboard.components import (
 WIDTH_PROPS = {"width", "xs", "sm", "md", "lg", "xl", "xxl"}
 
 
+def _props(component) -> dict:
+    """A Dash component's props, as Dash sends them to the browser.
+
+    Dash components set their props dynamically, so a type checker knows only
+    their children, as possibly None.
+    """
+    return component.to_plotly_json()["props"]
+
+
 class _Sweep:
     """What the parameter filters read of a sweep analyzer: each column swept."""
 
@@ -81,7 +90,7 @@ def test_a_filter_shows_its_whole_label_as_a_tooltip():
     options = [{"label": "Delta", "value": "delta"}, {"label": "SCARA", "value": "scara"}]
     column = create_filter_dropdown("robot", "Platform joint spacing (deg)", options, "scara")
 
-    label, dropdown = column.children
+    label, dropdown = _props(column)["children"]
     assert label.children == label.title == "Platform joint spacing (deg)"
     assert label.style["textOverflow"] == "ellipsis"
     assert (dropdown.id, dropdown.options, dropdown.value) == ("robot", options, "scara")
@@ -90,7 +99,7 @@ def test_a_filter_shows_its_whole_label_as_a_tooltip():
 
 def test_a_filter_is_sized_by_its_row_not_by_itself():
     column = create_filter_dropdown("robot", "Robot", [], None)
-    assert not WIDTH_PROPS & column.to_plotly_json()["props"].keys()
+    assert not WIDTH_PROPS & _props(column).keys()
 
 
 def test_parameter_filters_are_sized_from_their_number():
@@ -101,12 +110,12 @@ def test_parameter_filters_are_sized_from_their_number():
 
     container = create_parameter_filter_dropdowns(_Sweep(df), current_job_id="j1")
 
-    row = container.children
+    row = _props(container)["children"]
     # Three filters on a wide screen take a third of the row each, not a sixth
     assert row.className == filter_row_class_name(3)
     assert _per_row(3, "xxl") == 3
     for column in row.children:
-        assert not WIDTH_PROPS & column.to_plotly_json()["props"].keys()
+        assert not WIDTH_PROPS & _props(column).keys()
     dropdowns = [column.children[1] for column in row.children]
     assert [d.id["param"] for d in dropdowns] == ["radius", "spacing", "mass"]
     assert [d.value for d in dropdowns] == [200.0, 20.0, 5.0]
