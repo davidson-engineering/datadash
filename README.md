@@ -116,7 +116,9 @@ fig = BasicPlotBuilder().create_plot(
 | `create_graph_component(graph_id, figure, width)` | A themed `dcc.Graph` in a `dbc.Col` of the given width |
 | `construct_dash_table(table, table_id, max_width, cell_style, group_by)` | A read-only HTML table from a DataFrame, numbers right-aligned and floats rounded, with a sticky header. With `group_by`, a table per value of that column, captioned with it (theme style `table_section`), each scrolling on its own, all on one grid of columns (CSS subgrid), so the columns line up across them |
 | `create_job_selector_dropdown(job_options, current_job_id)` | A single job dropdown |
-| `create_parameter_filter_dropdowns(sweep_analyzer, current_job_id, formatter)` | One dropdown per swept parameter; `formatter(param)` returns `(label, format_value)`, where `format_value(value)` renders an option's label (option values stay raw) |
+| `create_parameter_filter_dropdowns(sweep_analyzer, current_job_id, formatter)` | One filter per swept parameter, in a row sized by `filter_row_class_name`; `formatter(param)` returns `(label, format_value)`, where `format_value(value)` renders an option's label (option values stay raw) |
+| `create_filter_dropdown(dropdown_id, label, options, value)` | A filter: its label (ending in an ellipsis if the column is narrower, and in full as a tooltip) over a dropdown, as a `dbc.Col` its row sizes |
+| `filter_row_class_name(count)` | The classes of a `dbc.Row` of `count` filters, which size its columns: one a row on phones, two on tablets, three on laptops, and on wide screens up to six, over as few rows as evenly as possible (fewer than four take a third of the row each). For rows of your own filters, and callbacks that hide some of them |
 | `parameter_filter_container_style()` | The filter bar style, for callbacks that hide and show it |
 
 `DashboardApp` (`dashboard/base.py`) is the base class for an app:
