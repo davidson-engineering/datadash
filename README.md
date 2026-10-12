@@ -100,6 +100,14 @@ fig = BasicPlotBuilder().create_plot(
   (`builders/plot.py`) build line plots, plots sharing axes, and subplot grids.
   A `secondary_axis` shows the same data in other units on a y-axis on the
   plot area's right edge, its labels in the right margin.
+- A figure's title sits at its top, its legend under the title and its plot
+  area under the legend: the title reserves its band of the top margin
+  (`title.automargin`) and the legend pushes the margin out below it, so a
+  legend that wraps onto more rows on a narrow chart grows down, never over
+  the title. Plotly reserves the band only while it is deeper than
+  `margin.t`, which the themes keep to 12px: a figure that sets a deeper top
+  margin has its title drawn higher than other charts', and its legend placed
+  regardless of its title.
 - `Spatial2DPlotBuilder` and `Spatial3DPlotBuilder` plot paths with equal axis
   scaling; `EndEffectorSpatialPlots` produces the XZ, YZ, XY, and 3D views.
   They are imported from `datadash.builders.plot` and are not in `__all__`

@@ -225,16 +225,23 @@ plotly:
       size: 14
       color: *color_text_primary
     autosize: True
-    # Title and legend positions are fixed in pixels from the top (via the top
-    # margin) rather than as a fraction of figure height, so titles line up
-    # across a row of charts.
+    # The title is fixed in pixels from the top, so titles line up across a row
+    # of charts. Under it the legend, then the plot area: the title reserves
+    # its band of the top margin (automargin) and the legend pushes the margin
+    # out by its height below that band, so a legend that wraps to more rows on
+    # a narrow chart grows down, never over the title. Plotly reserves the band
+    # only when it is deeper than margin.t, and draws the title lower when it
+    # does, so margin.t is kept to the 12px Plotly pads a pushed margin with:
+    # a figure with a deeper one has its title drawn higher than the others'.
     title:
       yref: container
-      y: 0.98
+      y: 1
       x: 0.5
       xanchor: center
       yanchor: top
-    margin: {l: 70, r: 70, t: 76, b: 60}
+      pad: {t: 3, b: 3}
+      automargin: True
+    margin: {l: 70, r: 70, t: 12, b: 60}
     legend:
       orientation: h
       x: 0.5
