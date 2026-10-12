@@ -3,6 +3,8 @@
 # 2023/01/23
 # Davidson Engineering Ltd. © 2023
 
+import math
+
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 from mergedeep import merge
@@ -338,6 +340,63 @@ def _default_parameter_format(param):
     return param, lambda value: f"{value:.3f}" if _is_numeric(value) else str(value)
 
 
+# Filters a row holds on phones, then from Bootstrap's sm (tablets) and lg
+# (laptops) breakpoints up
+_FILTERS_PER_ROW = {"": 1, "sm": 2, "lg": 3}
+# On wide screens (xxl, 1400 px and up), the fewest and most filters a row is
+# divided into
+_WIDE_FILTERS_PER_ROW = (3, 6)
+
+
+def filter_row_class_name(count):
+    """The classes of a row of ``count`` filters, which size its columns.
+
+    A row holds one filter on phones, two on tablets and three on laptops. On
+    wide screens it holds up to six: the filters take as few rows as that
+    allows, spread as evenly as it allows (seven make rows of four and three),
+    and fewer than four take a third of the row each, as on laptops. A row
+    that is not full is centred.
+
+    For callbacks that hide filters or show them again, so the filters shown
+    are sized as if they were the only ones.
+    """
+    fewest, most = _WIDE_FILTERS_PER_ROW
+    rows = max(1, math.ceil(count / most))
+    wide = min(max(math.ceil(count / rows), fewest), most)
+    sizes = [
+        f"row-cols-{breakpoint}-{n}" if breakpoint else f"row-cols-{n}"
+        for breakpoint, n in _FILTERS_PER_ROW.items()
+    ]
+    return " ".join(["g-3", "justify-content-center", *sizes, f"row-cols-xxl-{wide}"])
+
+
+def create_filter_dropdown(dropdown_id, label, options, value):
+    """A filter: ``label`` over a dropdown, one column of a filter row.
+
+    The row sizes the column (see ``filter_row_class_name``). A label wider
+    than its column ends in an ellipsis, and shows in full as a tooltip.
+
+    Args:
+        dropdown_id: The dropdown's ID
+        label: What the dropdown picks
+        options: The dropdown's options
+        value: The value of the option it starts on
+    """
+    theme = get_theme_manager()
+    return dbc.Col(
+        [
+            html.Label(label, title=label, style=theme.get_component_style("dropdown-label")),
+            dcc.Dropdown(
+                id=dropdown_id,
+                options=options,
+                value=value,
+                style=theme.get_component_style("dropdown"),
+                clearable=False,
+            ),
+        ]
+    )
+
+
 def create_parameter_filter_dropdowns(sweep_analyzer, current_job_id=None, formatter=None):
     """Create filter dropdowns for each swept parameter to narrow down job selection.
 
@@ -349,12 +408,10 @@ def create_parameter_filter_dropdowns(sweep_analyzer, current_job_id=None, forma
             raw, so callbacks receive the original data.
 
     Returns:
-        Container with one dropdown per swept parameter, laid out responsively
+        Container with one dropdown per swept parameter, in a row of columns
+        sized from their number (see ``filter_row_class_name``)
     """
-    theme = get_theme_manager()
     formatter = formatter or _default_parameter_format
-    dropdown_style = theme.get_component_style("dropdown")
-    label_style = theme.get_component_style("dropdown-label")
 
     if not sweep_analyzer or sweep_analyzer.df.empty:
         return html.Div(id="job-selector-container", style={"display": "none"})
@@ -376,27 +433,11 @@ def create_parameter_filter_dropdowns(sweep_analyzer, current_job_id=None, forma
         value = current_values.get(param, param_values[0] if param_values else None)
 
         columns.append(
-            dbc.Col(
-                [
-                    html.Label(label, title=label, style=label_style),
-                    dcc.Dropdown(
-                        id={"type": "param-filter", "param": param},
-                        options=options,
-                        value=value,
-                        style=dropdown_style,
-                        clearable=False,
-                    ),
-                ],
-                # One per row on phones, then 2, 3, and all six in one row on wide screens
-                xs=12,
-                sm=6,
-                lg=4,
-                xxl=2,
-            )
+            create_filter_dropdown({"type": "param-filter", "param": param}, label, options, value)
         )
 
     return html.Div(
         id="job-selector-container",
-        children=dbc.Row(columns, className="g-3", justify="center"),
+        children=dbc.Row(columns, className=filter_row_class_name(len(columns))),
         style=parameter_filter_container_style(),
     )

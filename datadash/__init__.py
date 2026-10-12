@@ -37,6 +37,7 @@ _EXPORTS = {
     "create_body_container": "datadash.dashboard.components",
     "create_dashboard_footer": "datadash.dashboard.components",
     "create_dashboard_header": "datadash.dashboard.components",
+    "create_filter_dropdown": "datadash.dashboard.components",
     "create_graph_component": "datadash.dashboard.components",
     "create_job_selector_dropdown": "datadash.dashboard.components",
     "create_main_container": "datadash.dashboard.components",
@@ -44,6 +45,7 @@ _EXPORTS = {
     "create_tab_layout": "datadash.dashboard.components",
     "create_tabs": "datadash.dashboard.components",
     "create_themed_tab": "datadash.dashboard.components",
+    "filter_row_class_name": "datadash.dashboard.components",
     "parameter_filter_container_style": "datadash.dashboard.components",
 }
 
