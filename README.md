@@ -74,6 +74,13 @@ opened for the first time showed only its search box. And it keeps a menu as
 wide as its dropdown, under it, its longer options wrapping: Dash 4 widens a
 menu to its longest option, which on a phone moved it left of its dropdown and
 flush with the screen's edge.
+It sets the page's side gutters too: `--datadash-gutter`, the side padding of
+the theme's `main_container` and `dropdown-container`, is 1.5rem, and 0.75rem
+below Bootstrap's `sm` breakpoint (576px). The rows of the two-column,
+three-column and split-window builders (class `datadash-padded-row`) sit a
+further `--datadash-chart-inset` in, 0.75rem and none on a phone, so a heading
+padded by `var(--datadash-chart-inset)` lines up with the charts under it. A
+375px phone's charts were 303px wide, 36px in from each side; they are 351px.
 `assets/keep-3d-camera.js` keeps a 3D scene's camera where
 the user left it when an animation plays: Plotly 4.1 saves a dragged camera
 into a layout that `Plotly.react` (which `dcc.Graph` calls) has since replaced,

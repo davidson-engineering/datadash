@@ -19,7 +19,7 @@ from werkzeug.serving import make_server
 from datadash.builders.content import create_two_column_builder
 from datadash.builders.plot import CombinedPlotBuilder
 from datadash.dashboard.base import DashboardApp, assets_path
-from datadash.dashboard.components import create_graph_component
+from datadash.dashboard.components import create_graph_component, create_main_container
 
 playwright = pytest.importorskip("playwright.sync_api")
 
@@ -73,7 +73,8 @@ class _Dashboard(DashboardApp):
         self.app = self._create_app()
         graph = lambda name: create_graph_component(name, _CHARTS[name])  # noqa: E731
         # Two columns from 992px up, one below that
-        self.app.layout = html.Div(
+        # In the page's gutters, as a dashboard's charts are
+        self.app.layout = create_main_container(
             create_two_column_builder().create_layout(
                 [[graph("long"), graph("short")], [graph("own"), html.Div()]]
             )

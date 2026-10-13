@@ -16,13 +16,12 @@ import threading
 
 import numpy as np
 import pytest
-from dash import html
 from werkzeug.serving import make_server
 
 from datadash.builders.content import create_two_column_builder
 from datadash.builders.plot import CombinedPlotBuilder, EndEffectorSpatialPlots
 from datadash.dashboard.base import DashboardApp, assets_path
-from datadash.dashboard.components import create_graph_component
+from datadash.dashboard.components import create_graph_component, create_main_container
 from datadash.themes.manager import ThemeManager
 
 playwright = pytest.importorskip("playwright.sync_api")
@@ -73,8 +72,9 @@ def _graph(name):
 class _Dashboard(DashboardApp):
     def initialize(self):
         self.app = self._create_app()
-        # Two columns from 992px up, one below that
-        self.app.layout = html.Div(
+        # Two columns from 992px up, one below that, in the page's gutters, as a
+        # dashboard's charts are
+        self.app.layout = create_main_container(
             create_two_column_builder().create_layout(
                 [
                     [_graph("three"), _graph("one")],
