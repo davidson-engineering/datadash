@@ -1,9 +1,10 @@
-"""A filter's dropdown shows its options as soon as its menu does
-(assets/dash-components.css), in a browser.
+"""A filter's dropdown shows its options as soon as its menu does, in a menu as
+wide as the dropdown (assets/dash-components.css), in a browser.
 
 Dash 4.4 puts the options in an open menu by an effect that runs after the menu
 is drawn, so the first time a menu opened, it was drawn once with only its
-search box.
+search box. And it widens a menu to its longest option, which on a phone moved
+the menu left of its dropdown and flush with the screen's right edge.
 """
 
 import os
@@ -19,6 +20,10 @@ from datadash.dashboard.components import create_filter_dropdown
 playwright = pytest.importorskip("playwright.sync_api")
 
 OPTIONS = [{"label": f"Option {i}", "value": i} for i in range(1, 4)]
+# Options longer than a phone's dropdown is wide, as a dashboard's metrics are
+LONG = [
+    {"label": f"End effector acceleration {axis}, std dev (m·s⁻²)", "value": axis} for axis in "XYZ"
+]
 
 
 class _Dashboard(DashboardApp):
@@ -28,6 +33,11 @@ class _Dashboard(DashboardApp):
             [
                 create_filter_dropdown("filter", "Filter", OPTIONS, 1),
                 create_filter_dropdown("empty", "Empty", [], None),
+                # Inset as a dashboard's page insets it
+                html.Div(
+                    create_filter_dropdown("long", "Long", LONG, "X"),
+                    style={"padding": "0 24px"},
+                ),
             ]
         )
 
@@ -138,3 +148,23 @@ def test_the_menu_of_a_dropdown_with_no_options_stays_hidden(page):
 
     assert menus
     assert not [menu for menu in menus if menu["shown"]]
+
+
+# A phone, and a desktop
+@pytest.mark.parametrize("width", [375, 1600])
+def test_a_menu_is_as_wide_as_its_dropdown_and_under_it(browser, url, width):
+    """Its longer options wrap, inside it."""
+    page = browser.new_page(viewport={"width": width, "height": 800})
+    page.goto(url)
+    page.click("#long")
+    menu = page.locator(".dash-dropdown-content")
+    playwright.expect(menu.locator(".dash-dropdown-option")).to_have_count(3)
+    dropdown, box = page.locator("#long").bounding_box(), menu.bounding_box()
+    options = [option.bounding_box() for option in menu.locator(".dash-dropdown-option").all()]
+    page.close()
+
+    assert dropdown and box
+    assert box["x"] == pytest.approx(dropdown["x"], abs=1)
+    assert box["width"] == pytest.approx(dropdown["width"], abs=1)
+    for option in options:
+        assert option and option["x"] + option["width"] <= box["x"] + box["width"] + 0.5
