@@ -186,10 +186,16 @@ def _assert_aligned(charts, columns):
     for column in _columns(charts):
         assert len({round(chart["left"], 1) for chart in column}) == 1, column
         assert len({round(chart["right"], 1) for chart in column}) == 1, column
-        # The wide chart's own margins are wider on both sides: lining them up
-        # took the page, not the figures
-        assert len({chart["need"]["l"] for chart in column}) == 2, column
-        assert len({chart["need"]["r"] for chart in column}) == 2, column
+        # The wide chart needs wider margins on both sides: lining them up took
+        # the page, not the figures. (A chart's need can grow past what it
+        # measured when the margins it is given change its tick labels, so a
+        # column's needs can take more than two values.)
+        for side in ("l", "r"):
+            need = {
+                kind: [chart["need"][side] for chart in column if chart["id"].startswith(kind)]
+                for kind in ("narrow", "wide")
+            }
+            assert max(need["narrow"]) < min(need["wide"]), (side, column)
     # Wider margins than a chart's own never clip its labels
     assert min(chart["inside"] for chart in charts) >= 0
 
