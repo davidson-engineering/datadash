@@ -37,6 +37,16 @@
     background: color-mix(in srgb, var(--Dash-Fill-Interactive-Strong) 8%, transparent);
 }
 
+/* Dash 4.4 puts the options in an open menu by an effect, which runs after the
+   menu is drawn, so a menu the first time it opens is drawn once with no
+   options, only its search box: for a frame, or a second in a page the browser
+   draws less often. The menu shows once its list is in, or the "No options
+   found" a search that matches none gets. The menu of a dropdown with no
+   options at all, nothing to search among, stays hidden. */
+.dash-dropdown-wrapper .dash-dropdown-content:not(:has(.dash-dropdown-options)) {
+    visibility: hidden;
+}
+
 /* create_tabs's tab bar. Its tabs share each row equally, so their labels wrap
    alike, and are never narrower than 11.5rem, a word of 14 characters in the
    theme's tab font (1rem, padded 1rem a side). How many tabs fit side by side
