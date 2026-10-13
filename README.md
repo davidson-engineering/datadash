@@ -70,7 +70,10 @@ tooltips) is in the theme's font too.
 variables Dash 4 colors them with, so an override file recolors dropdowns by
 setting those keys. It also keeps a dropdown's menu hidden until its options
 are in: Dash 4.4 fills an open menu's options after drawing it once, so a menu
-opened for the first time showed only its search box.
+opened for the first time showed only its search box. And it keeps a menu as
+wide as its dropdown, under it, its longer options wrapping: Dash 4 widens a
+menu to its longest option, which on a phone moved it left of its dropdown and
+flush with the screen's edge.
 `assets/keep-3d-camera.js` keeps a 3D scene's camera where
 the user left it when an animation plays: Plotly 4.1 saves a dragged camera
 into a layout that `Plotly.react` (which `dcc.Graph` calls) has since replaced,
@@ -84,7 +87,8 @@ labels and titles at 0.8 of their size (10px at least), each title 5px from its
 labels and base side margins of 10px, so its margins are no wider than its
 labels need. At the theme's sizes a 303px chart with a y-axis on each side kept
 a plot area of 123px; compact, it keeps 167px. A wider chart is drawn as its
-figure says.
+figure says. A page loaded hidden (a background tab), which runs no animation
+frames, has its charts measured all the same.
 `assets/place-legend.js` places a chart's legend again when Plotly leaves it
 out of place: on a chart's first draw, Plotly 4.1 places the legend before the
 title reserves its band of the top margin (see Figures), then moves the plot
