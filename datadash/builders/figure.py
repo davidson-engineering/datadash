@@ -280,6 +280,11 @@ class PlotFigure:
             # default, which labels converted units at values like 283 and 566
             "tickmode": "auto",
             "title": {"text": axis_title},
+            # The y-axis's line, mirrored, draws the plot area's right edge
+            # instead (below): Plotly 4.1 draws an overlaying axis's own line
+            # once before it has placed the axis, as "M233.5,NaNVNaN", an error
+            # in the console for each chart
+            "showline": False,
         }
         secondary_y_data = [
             np.asarray(trace.y) for trace in secondary_traces if trace.y is not None
@@ -290,7 +295,7 @@ class PlotFigure:
 
         fig.update_layout(
             xaxis={"anchor": "y", "domain": [0.0, 1.0]},
-            yaxis={"anchor": "x", "domain": [0.0, 1.0]},
+            yaxis={"anchor": "x", "domain": [0.0, 1.0], "mirror": True},
             yaxis2=yaxis2,
         )
         return self

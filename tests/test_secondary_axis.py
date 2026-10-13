@@ -38,6 +38,9 @@ def test_secondary_axis_layout():
     # On the plot area's right edge, its labels in the right margin, which the
     # dashboard lines up across stacked charts (assets/align-plot-areas.js)
     assert layout.yaxis2.anchor == "x" and layout.yaxis2.autoshift is None
+    # The y-axis's line, mirrored, draws the plot area's right edge: Plotly
+    # draws an overlaying axis's own line once before placing the axis
+    assert layout.yaxis2.showline is False and layout.yaxis.mirror is True
     assert tuple(layout.xaxis.domain) == (0.0, 1.0)
     low, high = layout.yaxis2.range
     assert low <= (y * 10.0).min() and high >= (y * 10.0).max()
