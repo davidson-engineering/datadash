@@ -79,6 +79,12 @@ so each animation frame jumped back to an earlier camera.
 column of the page: Plotly fits each chart's margins to its own tick labels,
 so it gives every chart in a column the widest margins any of them needs
 (automargin still widens a margin a chart's labels need, so none is clipped).
+It also draws a chart narrower than 420px, a phone's, compact: its axes' tick
+labels and titles at 0.8 of their size (10px at least), each title 5px from its
+labels and base side margins of 10px, so its margins are no wider than its
+labels need. At the theme's sizes a 303px chart with a y-axis on each side kept
+a plot area of 123px; compact, it keeps 167px. A wider chart is drawn as its
+figure says.
 `assets/place-legend.js` places a chart's legend again when Plotly leaves it
 out of place: on a chart's first draw, Plotly 4.1 places the legend before the
 title reserves its band of the top margin (see Figures), then moves the plot
