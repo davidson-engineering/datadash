@@ -70,7 +70,10 @@ tooltips) is in the theme's font too.
 variables Dash 4 colors them with, so an override file recolors dropdowns by
 setting those keys. It also keeps a dropdown's menu hidden until its options
 are in: Dash 4.4 fills an open menu's options after drawing it once, so a menu
-opened for the first time showed only its search box.
+opened for the first time showed only its search box. And it keeps a menu as
+wide as its dropdown, under it, its longer options wrapping: Dash 4 widens a
+menu to its longest option, which on a phone moved it left of its dropdown and
+flush with the screen's edge.
 `assets/keep-3d-camera.js` keeps a 3D scene's camera where
 the user left it when an animation plays: Plotly 4.1 saves a dragged camera
 into a layout that `Plotly.react` (which `dcc.Graph` calls) has since replaced,
