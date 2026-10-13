@@ -1,3 +1,30 @@
+/* The page's side gutters: the padding at the sides of the theme's
+   main_container and dropdown-container. Rows of charts
+   (create_two_column_builder, create_three_column_builder,
+   create_split_window_builder) sit a further --datadash-chart-inset in, so
+   a heading over charts can line up with them by that padding. A phone
+   (below Bootstrap's sm breakpoint) has no width to spare: its gutters are
+   half as wide and its charts line up with the rest of the page. */
+:root {
+    --datadash-gutter: 1.5rem;
+    --datadash-chart-inset: 0.75rem;
+}
+
+@media (max-width: 575.98px) {
+    :root {
+        --datadash-gutter: 0.75rem;
+        --datadash-chart-inset: 0px;
+    }
+}
+
+/* Bootstrap pads each column by half the row's gutter and takes that back
+   with the row's negative margins; a row of charts gives back all but the
+   inset */
+.row.datadash-padded-row {
+    margin-left: calc(var(--datadash-chart-inset) - 0.5 * var(--bs-gutter-x));
+    margin-right: calc(var(--datadash-chart-inset) - 0.5 * var(--bs-gutter-x));
+}
+
 /* dcc.Dropdown draws a button inside the wrapper that receives the theme's
    `dropdown` style. Let the wrapper's fill, border and corners show through,
    and give the value the page's type settings, which buttons do not inherit.

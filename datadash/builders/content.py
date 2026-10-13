@@ -111,6 +111,18 @@ def merge_properties(default, overrides):
     return merge(default, overrides)
 
 
+# The class of a row of charts, which sit --datadash-chart-inset in from the
+# page's other content (assets/dash-components.css)
+PADDED_ROW = "datadash-padded-row"
+
+
+def _padded_row(row_properties):
+    """``row_properties`` with the ``PADDED_ROW`` class beside any of their own."""
+    class_name = row_properties.get("className")
+    row_properties["className"] = f"{PADDED_ROW} {class_name}" if class_name else PADDED_ROW
+    return row_properties
+
+
 def create_three_column_builder(**kwargs):
     """Factory for three-column centered dashboard layouts.
 
@@ -123,10 +135,10 @@ def create_three_column_builder(**kwargs):
         "justify": "center",
         # Space between stacked rows, so one chart's axis title doesn't butt up
         # against the next chart's title
-        "style": {"margin": "0 auto 1.5rem"},
+        "style": {"margin-bottom": "1.5rem"},
     }
-    row_properties = merge_properties(
-        default_row_props, kwargs.get("row_properties", {})
+    row_properties = _padded_row(
+        merge_properties(default_row_props, kwargs.get("row_properties", {}))
     )
     column_properties = merge_properties(
         default_column_props, kwargs.get("column_properties", {})
@@ -149,10 +161,10 @@ def create_two_column_builder(**kwargs):
         "justify": "center",
         # Space between stacked rows, so one chart's axis title doesn't butt up
         # against the next chart's title
-        "style": {"margin": "0 auto 1.5rem"},
+        "style": {"margin-bottom": "1.5rem"},
     }
-    row_properties = merge_properties(
-        default_row_props, kwargs.get("row_properties", {})
+    row_properties = _padded_row(
+        merge_properties(default_row_props, kwargs.get("row_properties", {}))
     )
     column_properties = merge_properties(
         default_column_props, kwargs.get("column_properties", {})
@@ -251,10 +263,7 @@ def create_split_window_builder(**kwargs):
     # Properties for the main split row (large plot + grid column)
     default_row_props = {
         "justify": "center",  # Center the columns within the row
-        "style": {
-            "margin": "0 auto",  # Center the row on the page
-            "margin-bottom": "0rem",
-        },
+        "style": {"margin-bottom": "0rem"},
     }
 
     # Column properties for the main split
@@ -263,8 +272,8 @@ def create_split_window_builder(**kwargs):
         {"xs": 12, breakpoint: right_width},  # Grid column
     ]
 
-    row_properties = merge_properties(
-        default_row_props, kwargs.get("row_properties", {})
+    row_properties = _padded_row(
+        merge_properties(default_row_props, kwargs.get("row_properties", {}))
     )
 
     return ContentBuilder(
