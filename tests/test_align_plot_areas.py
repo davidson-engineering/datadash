@@ -290,3 +290,32 @@ def test_a_phone_s_charts_stay_compact_when_dash_draws_them_again(browser, url):
         for chart in charts:
             assert chart["ticks"] == before[chart["id"]]["ticks"], chart
             assert chart["titles"] == before[chart["id"]]["titles"], chart
+
+
+def test_charts_draw_their_axes_without_errors_and_with_both_edges(browser, url):
+    """Plotly 4.1 drew a secondary y-axis's own line once before placing the
+    axis, logging an error; the y-axis's line, mirrored, draws the right edge."""
+    page = browser.new_page(viewport={"width": 375, "height": 1000})
+    errors = []
+    page.on(
+        "console", lambda message: errors.append(message.text) if message.type == "error" else None
+    )
+    page.goto(url)
+    _settled_charts(page)
+    # Each chart's vertical axis lines, in px from its plot area's left edge,
+    # and its plot area's width
+    lines = page.evaluate(
+        """() => [...document.querySelectorAll('.js-plotly-plot')].map(gd => {
+          const x = gd._fullLayout.xaxis;
+          const drawn = [...gd.querySelectorAll('path.ylines-above, path.xy2-y')]
+            .map(path => path.getAttribute('d')).filter(d => d && d !== 'M0,0').join('');
+          return {edges: [...drawn.matchAll(/M([0-9.]+),[0-9.]+V/g)]
+            .map(m => Math.round(parseFloat(m[1]) - x._offset)), width: Math.round(x._length)};
+        })"""
+    )
+    page.close()
+
+    assert not errors
+    for chart in lines:
+        # Drawn half a pixel out, on the pixel grid
+        assert sorted(chart["edges"]) == pytest.approx([0, chart["width"]], abs=1), lines
