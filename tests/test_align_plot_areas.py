@@ -150,16 +150,27 @@ _SETTLED = """() => {
 
 def _settled_charts(page):
     """The charts once each has drawn and the page has aligned them."""
-    page.wait_for_function(_SETTLED, timeout=10000)
+    page.wait_for_function(_SETTLED, timeout=10000, polling=50)
     page.wait_for_timeout(200)  # for the margins the page gives them
-    page.wait_for_function(_SETTLED, timeout=10000)
+    page.wait_for_function(_SETTLED, timeout=10000, polling=50)
     return page.evaluate(_CHARTS)
 
 
-def _charts(browser, url, width, script=True):
+# A page hidden as it loads (in a background tab, or the pane of an app that
+# shows it later): it runs no animation frames
+_HIDDEN = """
+Object.defineProperty(document, "visibilityState", {get: () => "hidden"});
+Object.defineProperty(document, "hidden", {get: () => true});
+window.requestAnimationFrame = () => 0;
+"""
+
+
+def _charts(browser, url, width, script=True, hidden=False):
     """The charts on a page whose window is ``width`` px wide, by id, as the
     page draws them or, without the script, as their figures say."""
     page = browser.new_page(viewport={"width": width, "height": 1000})
+    if hidden:
+        page.add_init_script(_HIDDEN)
     if not script:
         page.route("**/assets/align-plot-areas.js*", lambda route: route.abort())
     page.goto(url)
@@ -250,6 +261,16 @@ def test_a_phone_s_charts_draw_their_axes_smaller_for_wider_plot_areas(browser, 
         assert plot >= lined_up + 30 and plot > 0.55 * chart["width"], (name, plot, lined_up)
 
 
+def test_a_hidden_page_s_charts_are_drawn_as_a_shown_one_s(browser, url):
+    """Loaded hidden at a phone's width, with no resize, the charts are compact
+    and lined up all the same: the page measures them without waiting for a
+    frame, which a hidden page never runs."""
+    hidden = _charts(browser, url, 375, hidden=True)
+    _assert_aligned(list(hidden.values()), 1)
+    _assert_compact(hidden.values())
+    assert hidden == _charts(browser, url, 375)
+
+
 def test_charts_line_up_again_when_the_window_resizes(browser, url):
     page = browser.new_page(viewport={"width": 1600, "height": 1000})
     page.goto(url)
@@ -293,3 +314,32 @@ def test_a_phone_s_charts_stay_compact_when_dash_draws_them_again(browser, url):
         for chart in charts:
             assert chart["ticks"] == before[chart["id"]]["ticks"], chart
             assert chart["titles"] == before[chart["id"]]["titles"], chart
+
+
+def test_charts_draw_their_axes_without_errors_and_with_both_edges(browser, url):
+    """Plotly 4.1 drew a secondary y-axis's own line once before placing the
+    axis, logging an error; the y-axis's line, mirrored, draws the right edge."""
+    page = browser.new_page(viewport={"width": 375, "height": 1000})
+    errors = []
+    page.on(
+        "console", lambda message: errors.append(message.text) if message.type == "error" else None
+    )
+    page.goto(url)
+    _settled_charts(page)
+    # Each chart's vertical axis lines, in px from its plot area's left edge,
+    # and its plot area's width
+    lines = page.evaluate(
+        """() => [...document.querySelectorAll('.js-plotly-plot')].map(gd => {
+          const x = gd._fullLayout.xaxis;
+          const drawn = [...gd.querySelectorAll('path.ylines-above, path.xy2-y')]
+            .map(path => path.getAttribute('d')).filter(d => d && d !== 'M0,0').join('');
+          return {edges: [...drawn.matchAll(/M([0-9.]+),[0-9.]+V/g)]
+            .map(m => Math.round(parseFloat(m[1]) - x._offset)), width: Math.round(x._length)};
+        })"""
+    )
+    page.close()
+
+    assert not errors
+    for chart in lines:
+        # Drawn half a pixel out, on the pixel grid
+        assert sorted(chart["edges"]) == pytest.approx([0, chart["width"]], abs=1), lines

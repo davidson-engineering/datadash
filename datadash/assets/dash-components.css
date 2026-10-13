@@ -64,6 +64,19 @@
     background: color-mix(in srgb, var(--Dash-Fill-Interactive-Strong) 8%, transparent);
 }
 
+/* A menu is as wide as its dropdown and under it, its longer options wrapping.
+   Dash 4 widens a menu to its longest option, up to 98vw, and Radix then moves
+   it left until it fits on the screen, flush with the screen's right edge: on
+   a 375px phone a 326px dropdown's menu ran from 7.5px to 375px. */
+.dash-dropdown-wrapper .dash-dropdown-content {
+    width: var(--radix-popover-trigger-width);
+    max-width: none;
+}
+
+.dash-dropdown-wrapper .dash-options-list-option {
+    overflow-wrap: anywhere;
+}
+
 /* Dash 4.4 puts the options in an open menu by an effect, which runs after the
    menu is drawn, so a menu the first time it opens is drawn once with no
    options, only its search box: for a frame, or a second in a page the browser

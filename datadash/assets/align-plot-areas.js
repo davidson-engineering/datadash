@@ -303,15 +303,36 @@
     measured();
   }
 
-  var pending = null;
-  function schedule() {
-    if (pending === null) {
-      pending = window.requestAnimationFrame(function () {
-        pending = null;
-        frame();
-      });
+  // A hidden page (a tab in the background, a page printed or captured while
+  // hidden) runs no animation frames until it is shown, and paints nothing, so
+  // its charts are measured in a task of their own instead: after Dash's graph
+  // has drawn them, as in a frame
+  var pending = false;
+  function run() {
+    if (pending) {
+      pending = false;
+      frame();
     }
   }
+
+  function schedule() {
+    if (pending) {
+      return;
+    }
+    pending = true;
+    if (document.visibilityState === "hidden") {
+      window.setTimeout(run, 0);
+    } else {
+      window.requestAnimationFrame(run);
+    }
+  }
+
+  // A frame asked for just before the page was hidden would wait until shown
+  document.addEventListener("visibilitychange", function () {
+    if (pending && document.visibilityState === "hidden") {
+      window.setTimeout(run, 0);
+    }
+  });
 
   function afterPlot(gd) {
     if (gd._alignBusy || !isCartesian(gd)) {
